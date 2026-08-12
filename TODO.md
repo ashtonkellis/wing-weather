@@ -16,7 +16,7 @@ conditions are inside my rideable window (configurable min/max per metric).
 - **Wind + temperature** — Open-Meteo forecast API at Alameda lat/lon.
   Current + hourly. Returns wind in knots. `api.open-meteo.com`
 
-### Tech approach (proposed)
+### Tech approach
 
 - Static PWA (plain HTML/CSS/JS, no build step) so GitHub Pages can serve
   it directly and auto-deploy is trivial. All API calls happen client-side.
@@ -26,33 +26,36 @@ conditions are inside my rideable window (configurable min/max per metric).
 
 ## To Do
 
-### Epic 1 — Scaffolding, hosting & auto-deploy
-- [ ] Scaffold static PWA structure (`index.html`, `css/`, `js/`, assets)
-- [ ] Configure GitHub Pages for free hosting
-- [ ] Add GitHub Actions workflow to auto-deploy on push to main
-
-### Epic 2 — PWA installability (icon on phone)
-- [ ] Add `manifest.webmanifest` (name, `display: standalone`, theme colors)
-- [ ] Generate app icons (192px + 512px, maskable)
-- [ ] Add a service worker to cache the app shell (installable + offline)
-- [ ] Verify "Add to Home Screen" installs an icon on mobile
-
-### Epic 3 — Fetch local weather data
-- [ ] Fetch current tide height from NOAA (station 9414750)
-- [ ] Fetch current wind speed from Open-Meteo (Alameda lat/lon)
-- [ ] Fetch current temperature from Open-Meteo
-- [ ] Aggregate into one data model with loading + error/retry states
-
-### Epic 4 — Core UI + rideability thresholds
-- [ ] Display current tide, wind, and temperature
-- [ ] Show min/max rideable range per metric with an in-range indicator
-- [ ] Settings screen to configure each min/max (persisted in `localStorage`)
-
-### Epic 5 — Stretch: 3-hour predictions
-- [ ] Predicted tide height over the next 3 hours (NOAA 6-min predictions)
-- [ ] Predicted temperature over the next 3 hours (Open-Meteo hourly)
-- [ ] Predicted wind speed over the next 3 hours (Open-Meteo hourly)
+### Manual steps to go live (need repo owner)
+- [ ] Enable GitHub Pages: repo **Settings → Pages → Source: GitHub Actions**
+- [ ] Merge `claude/good-morning-xonl5b` → `main` to trigger the first deploy
+- [ ] Install on phone from the live URL and confirm the home-screen icon
 
 ## Done
 
-_Completed features will be listed here._
+### Epic 1 — Scaffolding, hosting & auto-deploy
+- [x] Scaffold static PWA structure (`index.html`, `css/`, `js/`, `icons/`)
+- [x] GitHub Pages hosting (static site + `.nojekyll`)
+- [x] GitHub Actions workflow to auto-deploy on push to `main`
+
+### Epic 2 — PWA installability (icon on phone)
+- [x] `manifest.webmanifest` (name, `display: standalone`, theme colors)
+- [x] App icons (192px + 512px, `any maskable`)
+- [x] Service worker caches the app shell (installable + offline)
+
+### Epic 3 — Fetch local weather data
+- [x] Current tide height from NOAA (station 9414750)
+- [x] Current wind speed from Open-Meteo (Alameda lat/lon)
+- [x] Current temperature from Open-Meteo
+- [x] Aggregate into one data model with loading + error/retry states
+      (tolerates a partial source failure)
+
+### Epic 4 — Core UI + rideability thresholds
+- [x] Display current tide, wind, and temperature
+- [x] Min/max rideable range per metric with in-range indicator (green/red)
+- [x] Settings screen to configure each min/max (persisted in `localStorage`)
+
+### Epic 5 — Stretch: 3-hour predictions
+- [x] Predicted tide height over the next 3 hours (NOAA 6-min predictions)
+- [x] Predicted temperature over the next 3 hours (Open-Meteo hourly)
+- [x] Predicted wind speed over the next 3 hours (Open-Meteo hourly)

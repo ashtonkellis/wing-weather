@@ -1,0 +1,25 @@
+{
+  "name": "Wing Weather — Alameda",
+  "short_name": "WingWx",
+  "description": "Tide, wind, and temperature for wing foiling near Alameda.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d4770",
+  "theme_color": "#0d4770",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
