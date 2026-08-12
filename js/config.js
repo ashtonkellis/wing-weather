@@ -1,10 +1,10 @@
 /* Static configuration for wing-weather. */
 window.WW_CONFIG = {
-  // Wing-foil spot near Alameda (Robert W. Crown Memorial State Beach area).
+  // Wing-foil launch near Alameda. Coords from 37°44.8801'N 122°14.4924'W.
   location: {
     name: "Alameda, CA",
-    latitude: 37.7719,
-    longitude: -122.2850,
+    latitude: 37.74800,
+    longitude: -122.24154,
   },
   // NOAA CO-OPS tide station: Alameda, San Francisco Bay.
   tideStation: "9414750",
