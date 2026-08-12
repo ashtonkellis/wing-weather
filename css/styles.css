@@ -100,7 +100,13 @@ main {
 
 /* mini 3-hour forecast sparkline */
 .forecast { margin-top: 12px; }
-.forecast-label { font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
+.forecast-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
 .spark { display: block; width: 100%; height: 46px; }
 .spark-ticks {
   display: flex;
@@ -163,6 +169,7 @@ main {
   color: var(--text);
   font: inherit;
 }
+.no-max-note { font-size: 0.78rem; color: var(--muted); font-style: italic; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
 .btn-primary { background: var(--accent); color: #04283a; border-color: var(--accent); font-weight: 600; }
 .btn-secondary { background: transparent; color: var(--muted); }

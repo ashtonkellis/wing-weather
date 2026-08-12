@@ -8,12 +8,14 @@ window.WW_CONFIG = {
   },
   // NOAA CO-OPS tide station: Alameda, San Francisco Bay.
   tideStation: "9414750",
-  // How far ahead the "next 3 hours" forecasts look.
-  forecastHours: 3,
-  // Default rideable ranges. User-configurable; overrides live in localStorage.
+  // The forecast window runs from now until today's sunset (fetched from
+  // Open-Meteo). If sunset can't be determined, fall back to this hour (24h).
+  fallbackEndHour: 20,
+  // Default rideable ranges. min/max are user-configurable; a `null` max
+  // means "no upper limit". Overrides live in localStorage.
   defaults: {
-    tide: { min: 1.0, max: 6.0, unit: "ft", label: "Tide height", icon: "🌊" },
+    tide: { min: 1.0, max: null, unit: "ft", label: "Tide height", icon: "🌊" },
     wind: { min: 12, max: 30, unit: "kn", label: "Wind speed", icon: "💨" },
-    temp: { min: 50, max: 95, unit: "°F", label: "Temperature", icon: "🌡️" },
+    temp: { min: 50, max: null, unit: "°F", label: "Temperature", icon: "🌡️" },
   },
 };

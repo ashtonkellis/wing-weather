@@ -13,9 +13,11 @@ window.WW_Storage = (function () {
       saved = {};
     }
     for (const m of METRICS) {
+      // A default max of null means the metric is unbounded above; keep it null.
+      const maxDefault = d[m].max;
       result[m] = {
         min: numOr(saved[m] && saved[m].min, d[m].min),
-        max: numOr(saved[m] && saved[m].max, d[m].max),
+        max: maxDefault === null ? null : numOr(saved[m] && saved[m].max, maxDefault),
       };
     }
     return result;
@@ -23,8 +25,10 @@ window.WW_Storage = (function () {
 
   function save(thresholds) {
     const clean = {};
+    const d = window.WW_CONFIG.defaults;
     for (const m of METRICS) {
-      clean[m] = { min: Number(thresholds[m].min), max: Number(thresholds[m].max) };
+      const max = d[m].max === null ? null : Number(thresholds[m].max);
+      clean[m] = { min: Number(thresholds[m].min), max };
     }
     localStorage.setItem(KEY, JSON.stringify(clean));
     return clean;

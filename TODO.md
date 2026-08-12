@@ -55,7 +55,14 @@ conditions are inside my rideable window (configurable min/max per metric).
 - [x] Min/max rideable range per metric with in-range indicator (green/red)
 - [x] Settings screen to configure each min/max (persisted in `localStorage`)
 
-### Epic 5 — Stretch: 3-hour predictions
-- [x] Predicted tide height over the next 3 hours (NOAA 6-min predictions)
-- [x] Predicted temperature over the next 3 hours (Open-Meteo hourly)
-- [x] Predicted wind speed over the next 3 hours (Open-Meteo hourly)
+### Epic 5 — Stretch: short-term predictions
+- [x] Predicted tide height (NOAA 6-min predictions)
+- [x] Predicted temperature (Open-Meteo hourly)
+- [x] Predicted wind speed (Open-Meteo hourly)
+
+### Epic 6 — Rest-of-day outlook
+- [x] Extend forecasts from now through **today's sunset** (dynamic; from
+      Open-Meteo `daily=sunset`, so shorter in winter)
+- [x] Show the sunset time and each metric's day min–max on every card
+- [x] Remove the upper limit for tide height (min only)
+- [x] Remove the upper limit for temperature (min only)

@@ -10,8 +10,10 @@ rideable window.
 - 📲 **Installable PWA** — add it to your phone's home screen like a native app
 - 🌊 **Tide height** near Alameda (NOAA CO-OPS station `9414750`)
 - 💨 **Wind speed** and 🌡️ **temperature** at Alameda (Open-Meteo)
-- ✅ **Rideability check** — configurable min/max per metric, shown at a glance
-- 🕒 **3-hour predictions** (stretch) for tide, wind, and temperature
+- ✅ **Rideability check** — configurable thresholds per metric (wind has a
+  min/max window; tide and temperature are min-only), shown at a glance
+- 🕒 **Rest-of-day outlook** — forecast for tide, wind, and temperature from
+  now through today's **sunset** (dynamic, so shorter in winter)
 
 ## Data sources
 
