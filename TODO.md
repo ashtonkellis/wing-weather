@@ -66,3 +66,8 @@ conditions are inside my rideable window (configurable min/max per metric).
 - [x] Show the sunset time and each metric's day min–max on every card
 - [x] Remove the upper limit for tide height (min only)
 - [x] Remove the upper limit for temperature (min only)
+
+### Epic 7 — Full-day charts
+- [x] Show the **entire day** (midnight→midnight) on every chart
+- [x] Vertical **"now" marker** on each chart, with a legend chip
+- [x] Overlay **gusts as a dotted line** on the wind chart (peak in legend)

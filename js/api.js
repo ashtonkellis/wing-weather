@@ -16,6 +16,11 @@ window.WW_Api = (function () {
     return `${p.year}-${p.month}-${p.day}T${hour}:${p.minute}`;
   }
 
+  // Minutes since midnight from a "YYYY-MM-DDTHH:mm" string.
+  function minutesOf(t) {
+    return Number(t.slice(11, 13)) * 60 + Number(t.slice(14, 16));
+  }
+
   async function fetchJson(url, timeoutMs = 12000) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -31,18 +36,17 @@ window.WW_Api = (function () {
   /* ---- NOAA CO-OPS tide predictions ---- */
   async function getTide() {
     const now = wallClock(TZ); // e.g. 2026-08-12T07:15
-    const begin = now.slice(0, 10).replace(/-/g, "") + " " + now.slice(11); // "20260812 07:15"
-    // Fetch 6-min points through the end of the day; getConditions() trims
-    // the series to today's sunset once Open-Meteo reports it.
-    const hoursLeft = Math.min(24, Math.max(1, 24 - Number(now.slice(11, 13))));
+    const day = now.slice(0, 10).replace(/-/g, ""); // "20260812"
+    const begin = day + " " + now.slice(11); // "20260812 07:15" for next hi/lo
     const base =
       "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter" +
       "?product=predictions&application=wing-weather&datum=MLLW" +
       "&units=english&time_zone=lst_ldt&format=json&station=" + cfg.tideStation;
 
     const [sixMin, hilo] = await Promise.all([
-      fetchJson(`${base}&begin_date=${encodeURIComponent(begin)}&range=${hoursLeft}`),
-      // hi/lo over the next day for "next high/low" context
+      // 6-minute points across the whole day (midnight to midnight)
+      fetchJson(`${base}&begin_date=${day}&end_date=${day}`),
+      // hi/lo from now for "next high/low" context
       fetchJson(`${base}&interval=hilo&begin_date=${encodeURIComponent(begin)}&range=24`),
     ]);
 
@@ -52,8 +56,16 @@ window.WW_Api = (function () {
     }));
     if (!series.length) throw new Error("No tide predictions returned");
 
-    const value = series[0].v;
-    const trend = series.length > 1 ? (series[1].v >= value ? "rising" : "falling") : null;
+    // Current reading = the point nearest to now (series starts at midnight).
+    const nowMin = minutesOf(now);
+    let ci = 0, best = Infinity;
+    for (let i = 0; i < series.length; i++) {
+      const diff = Math.abs(minutesOf(series[i].t) - nowMin);
+      if (diff < best) { best = diff; ci = i; }
+    }
+    const value = series[ci].v;
+    const nextPt = series[ci + 1] || series[ci];
+    const trend = nextPt.v >= value ? "rising" : "falling";
 
     let nextExtreme = null;
     for (const p of hilo.predictions || []) {
@@ -74,7 +86,7 @@ window.WW_Api = (function () {
       "https://api.open-meteo.com/v1/forecast" +
       `?latitude=${latitude}&longitude=${longitude}` +
       "&current=temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m" +
-      "&hourly=temperature_2m,wind_speed_10m" +
+      "&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m" +
       "&daily=sunset" +
       "&temperature_unit=fahrenheit&wind_speed_unit=kn&timezone=" + encodeURIComponent(TZ) +
       "&forecast_days=2";
@@ -82,15 +94,16 @@ window.WW_Api = (function () {
     const data = await fetchJson(url);
     const cur = data.current || {};
     const now = wallClock(TZ);
-    // Today's sunset marks the end of the forecast window.
-    const sunset = data.daily && data.daily.sunset ? data.daily.sunset[0] : null;
-    const end = sunset || fallbackEnd(now);
+    const today = now.slice(0, 10);
+    // Today's sunset (for display context in the footer).
+    const sunset = data.daily && data.daily.sunset ? data.daily.sunset[0] : fallbackEnd(now);
 
-    const windSeries = hourlyWindow(data.hourly, "wind_speed_10m", now, end);
-    const tempSeries = hourlyWindow(data.hourly, "temperature_2m", now, end);
+    const windSeries = hourlyDay(data.hourly, "wind_speed_10m", today);
+    const gustSeries = hourlyDay(data.hourly, "wind_gusts_10m", today);
+    const tempSeries = hourlyDay(data.hourly, "temperature_2m", today);
 
     return {
-      sunset: end,
+      sunset: sunset,
       temp: { value: cur.temperature_2m, unit: "°F", series: tempSeries },
       wind: {
         value: cur.wind_speed_10m,
@@ -98,6 +111,7 @@ window.WW_Api = (function () {
         direction: cur.wind_direction_10m,
         unit: "kn",
         series: windSeries,
+        gustSeries: gustSeries,
       },
     };
   }
@@ -108,42 +122,34 @@ window.WW_Api = (function () {
     return now.slice(0, 10) + "T" + h + ":00";
   }
 
-  /* Hourly points from the current hour through the window end (inclusive). */
-  function hourlyWindow(hourly, key, now, end) {
+  /* All hourly points that fall on the given local date (midnight to midnight). */
+  function hourlyDay(hourly, key, date) {
     if (!hourly || !hourly.time) return [];
-    const startHour = now.slice(0, 13); // "YYYY-MM-DDTHH"
     const out = [];
     for (let i = 0; i < hourly.time.length; i++) {
       const t = hourly.time[i];
-      if (t >= startHour && t <= end) out.push({ t, v: Number(hourly[key][i]) });
+      if (t.slice(0, 10) === date) out.push({ t, v: Number(hourly[key][i]) });
     }
     return out;
   }
 
-  /* Fetch everything the dashboard needs, tolerating a partial failure. */
+  /* Fetch everything the dashboard needs, tolerating a partial failure.
+     Charts span the whole day; `now` positions the "now" marker. */
   async function getConditions() {
+    const now = wallClock(TZ);
     const [tideRes, wxRes] = await Promise.allSettled([getTide(), getWeather()]);
-    const tideFull = tideRes.status === "fulfilled" ? tideRes.value : null;
+    const tide = tideRes.status === "fulfilled" ? tideRes.value : null;
     const wx = wxRes.status === "fulfilled" ? wxRes.value : null;
-    if (!tideFull && !wx) {
+    if (!tide && !wx) {
       throw new Error("Could not reach weather or tide services.");
-    }
-
-    // The window ends at today's sunset (from Open-Meteo), else a fallback.
-    const sunset = wx && wx.sunset ? wx.sunset : fallbackEnd(wallClock(TZ));
-
-    let tide = null;
-    if (tideFull) {
-      const inWindow = tideFull.series.filter((p) => p.t <= sunset);
-      // Keep at least the current reading even if sunset has passed.
-      tide = { ...tideFull, series: inWindow.length > 1 ? inWindow : tideFull.series.slice(0, 1) };
     }
 
     return {
       tide,
       temp: wx ? wx.temp : null,
       wind: wx ? wx.wind : null,
-      sunset,
+      sunset: wx && wx.sunset ? wx.sunset : fallbackEnd(now),
+      now,
       fetchedAt: new Date(),
     };
   }

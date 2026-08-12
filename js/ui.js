@@ -19,10 +19,15 @@ window.WW_UI = (function () {
     el.refresh.hidden = !isError;
   }
 
-  let currentSunset = null; // ISO string for the active forecast window end
+  let currentSunset = null; // ISO string: today's sunset (footer context)
+  let currentNow = null;    // ISO string: "now", for the now-marker on charts
 
   function hhmm(t) {
     return t && t.length >= 16 ? t.slice(11, 16) : "";
+  }
+
+  function minutesOf(t) {
+    return Number(t.slice(11, 13)) * 60 + Number(t.slice(14, 16));
   }
 
   // "2026-08-12T20:12" -> "8:12 PM"
@@ -40,6 +45,7 @@ window.WW_UI = (function () {
     el.cards.hidden = false;
     el.cards.innerHTML = "";
     currentSunset = conditions.sunset || null;
+    currentNow = conditions.now || null;
 
     el.cards.appendChild(tideCard(conditions.tide, thresholds.tide));
     el.cards.appendChild(windCard(conditions.wind, thresholds.wind));
@@ -72,7 +78,11 @@ window.WW_UI = (function () {
   function windCard(wind, range) {
     if (!wind || wind.value == null) return errorCard(defaults.wind, "Wind data unavailable");
     const sub = wind.gust != null ? `Gusts to ${Math.round(wind.gust)} kn` : "";
-    return buildCard(defaults.wind, wind.value, range, { sub, series: wind.series });
+    return buildCard(defaults.wind, wind.value, range, {
+      sub,
+      series: wind.series,
+      overlay: { series: wind.gustSeries, label: "gusts" },
+    });
   }
 
   function tempCard(temp, range) {
@@ -107,7 +117,7 @@ window.WW_UI = (function () {
       <div class="range-row">${rangeRow}</div>`;
 
     if (opts.series && opts.series.length > 1) {
-      card.appendChild(forecast(opts.series, range, meta));
+      card.appendChild(forecast(opts.series, range, meta, opts.overlay));
     }
     return card;
   }
@@ -127,22 +137,28 @@ window.WW_UI = (function () {
     return unit === "kn" || unit === "°F" ? String(Math.round(v)) : v.toFixed(1);
   }
 
-  /* Inline SVG sparkline from now to sunset, with a shaded rideable band. */
-  function forecast(series, range, meta) {
+  /* Inline SVG sparkline from now to sunset, with a shaded rideable band.
+     An optional dotted overlay (e.g. gusts) is drawn on the same scale. */
+  function forecast(series, range, meta, overlay) {
     const wrap = document.createElement("div");
     wrap.className = "forecast";
     const vals = series.map((p) => p.v);
     const dataLo = Math.min(...vals), dataHi = Math.max(...vals);
 
-    // Y-scale includes the thresholds that exist so the band is visible.
-    const lo = range.min != null ? Math.min(dataLo, range.min) : dataLo;
-    const hi = range.max != null ? Math.max(dataHi, range.max) : dataHi;
+    const over = overlay && overlay.series && overlay.series.length > 1 ? overlay.series : null;
+    const overVals = over ? over.map((p) => p.v) : [];
+
+    // Y-scale includes the thresholds and the overlay so nothing is clipped.
+    const loParts = vals.concat(range.min != null ? [range.min] : []);
+    const hiParts = vals.concat(overVals, range.max != null ? [range.max] : []);
+    const lo = Math.min(...loParts);
+    const hi = Math.max(...hiParts);
     const span = hi - lo || 1;
     const W = 100, H = 40, pad = 3;
-    const x = (i) => series.length === 1 ? W / 2 : pad + (i / (series.length - 1)) * (W - 2 * pad);
+    const x = (i, n) => n === 1 ? W / 2 : pad + (i / (n - 1)) * (W - 2 * pad);
     const y = (v) => H - pad - ((v - lo) / span) * (H - 2 * pad);
 
-    const pts = series.map((p, i) => `${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(" ");
+    const line = (s) => s.map((p, i) => `${x(i, s.length).toFixed(1)},${y(p.v).toFixed(1)}`).join(" ");
 
     // Rideable band: from min up to max, or up to the chart top when unbounded.
     const bandBot = range.min != null ? y(range.min) : H - pad;
@@ -150,22 +166,48 @@ window.WW_UI = (function () {
     const bandY = Math.min(bandTop, bandBot);
     const bandH = Math.abs(bandBot - bandTop);
 
-    const label = currentSunset ? `Till sunset · ${fmtTime(currentSunset)}` : "Rest of day";
+    const label = "Full day";
     const summary = `${fmtVal(dataLo, meta.unit)}–${fmtVal(dataHi, meta.unit)} ${meta.unit}`;
     const mid = series[Math.floor((series.length - 1) / 2)];
+
+    // Vertical "now" marker, placed within the series' own time span.
+    let nowSvg = "";
+    if (currentNow && series.length > 1) {
+      const t0 = minutesOf(series[0].t), tN = minutesOf(series[series.length - 1].t), tn = minutesOf(currentNow);
+      if (tN > t0 && tn >= t0 && tn <= tN) {
+        const nx = pad + ((tn - t0) / (tN - t0)) * (W - 2 * pad);
+        nowSvg = `<line x1="${nx.toFixed(1)}" y1="0" x2="${nx.toFixed(1)}" y2="${H}" stroke="var(--text)"
+          stroke-width="1.2" vector-effect="non-scaling-stroke" opacity="0.6" />`;
+      }
+    }
+
+    const overlaySvg = over
+      ? `<polyline points="${line(over)}" fill="none" stroke="var(--muted)" stroke-width="1.6"
+           vector-effect="non-scaling-stroke" stroke-dasharray="1 4" stroke-linecap="round" opacity="0.9" />`
+      : "";
+    const nowChip = currentNow ? `<span><i class="swatch nowbar"></i>now ${hhmm(currentNow)}</span>` : "";
+    const gustChip = over
+      ? `<span><i class="swatch dotted"></i>${overlay.label} · peak ${fmtVal(Math.max(...overVals), meta.unit)} ${meta.unit}</span>`
+      : "";
+    const legend = (nowChip || gustChip)
+      ? `<div class="spark-legend">${nowChip}${gustChip}</div>`
+      : "";
 
     wrap.innerHTML = `
       <div class="forecast-label"><span>${label}</span><span>${summary}</span></div>
       <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
         <rect x="0" y="${bandY.toFixed(1)}" width="${W}" height="${bandH.toFixed(1)}" fill="rgba(55,214,122,0.14)" />
-        <polyline points="${pts}" fill="none" stroke="#2fb8d4" stroke-width="1.6"
+        ${nowSvg}
+        ${overlaySvg}
+        <polyline points="${line(series)}" fill="none" stroke="#2fb8d4" stroke-width="1.6"
           stroke-linejoin="round" stroke-linecap="round" />
       </svg>
       <div class="spark-ticks">
         <span>${hhmm(series[0].t)}</span>
         <span>${hhmm(mid.t)}</span>
         <span>${hhmm(series[series.length - 1].t)}</span>
-      </div>`;
+      </div>
+      ${legend}`;
     return wrap;
   }
 
