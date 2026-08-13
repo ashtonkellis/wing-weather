@@ -2,7 +2,7 @@
 window.WW_CONFIG = {
   // App version, shown in the footer. Bump on every deploy and keep
   // sw.js CACHE ("wing-weather-v<version>") in sync. See CLAUDE.md.
-  version: "10",
+  version: "11",
   // Wing-foil launch near Alameda. Coords from 37°44.8801'N 122°14.4924'W.
   location: {
     name: "Alameda, CA",
@@ -19,6 +19,6 @@ window.WW_CONFIG = {
   defaults: {
     tide: { min: 1.0, max: null, unit: "ft", label: "Tide height", icon: "🌊" },
     wind: { min: 7, max: 30, unit: "kn", label: "Wind speed", icon: "💨" },
-    temp: { min: 50, max: null, unit: "°F", label: "Temperature", icon: "🌡️" },
+    temp: { min: 65, max: null, unit: "°F", label: "Temperature", icon: "🌡️" },
   },
 };
