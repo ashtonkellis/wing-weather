@@ -2,7 +2,7 @@
 window.WW_CONFIG = {
   // App version, shown in the footer. Bump on every deploy and keep
   // sw.js CACHE ("wing-weather-v<version>") in sync. See CLAUDE.md.
-  version: "11",
+  version: "12",
   // Wing-foil launch near Alameda. Coords from 37°44.8801'N 122°14.4924'W.
   location: {
     name: "Alameda, CA",
