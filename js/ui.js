@@ -31,6 +31,13 @@ window.WW_UI = (function () {
     return Number(t.slice(11, 13)) * 60 + Number(t.slice(14, 16));
   }
 
+  // Compass direction (16-point) the wind blows FROM.
+  function dirName(deg) {
+    const dirs = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+      "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+    return dirs[Math.round((deg % 360) / 22.5) % 16];
+  }
+
   // "2026-08-12T20:12" -> "8:12 PM"
   function fmtTime(iso) {
     if (!iso || iso.length < 16) return "";
@@ -79,8 +86,14 @@ window.WW_UI = (function () {
 
   function windCard(wind, range) {
     if (!wind || wind.value == null) return errorCard(defaults.wind, "Wind data unavailable");
-    // Gusts appear in the chart legend, so no separate sub-line is needed.
+    // Show direction the wind blows FROM; arrow points the way it travels.
+    let sub = "";
+    if (wind.direction != null) {
+      const deg = Math.round(wind.direction);
+      sub = `<span class="wind-arrow" style="transform:rotate(${deg + 180}deg)">↑</span> from ${dirName(wind.direction)} · ${deg}°`;
+    }
     return buildCard(defaults.wind, wind.value, range, {
+      sub,
       series: wind.series,
       overlay: { series: wind.gustSeries, label: "gusts" },
     });

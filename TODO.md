@@ -78,3 +78,7 @@ conditions are inside my rideable window (configurable min/max per metric).
 - [x] Respect the notch / Dynamic Island via `safe-area-inset` (nothing hidden)
 - [x] Shade **nighttime** (before sunrise / after sunset) on every chart
 - [x] Lower default min wind speed to **7 kn**
+
+### Epic 9 — Wind direction
+- [x] Show wind direction on the wind card (compass point it blows *from*,
+      degrees, and an arrow pointing the way the wind travels)

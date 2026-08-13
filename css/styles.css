@@ -97,6 +97,7 @@ main {
 .badge.out-range { color: var(--bad); background: var(--bad-bg); }
 
 .sub { font-size: 0.72rem; color: var(--muted); }
+.wind-arrow { display: inline-block; color: var(--accent); font-weight: 700; }
 
 /* full-day forecast sparkline */
 .forecast { margin-top: 7px; }
