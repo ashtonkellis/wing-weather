@@ -36,6 +36,8 @@
 
   document.getElementById("refresh-btn").addEventListener("click", refresh);
 
+  document.getElementById("year-btn").addEventListener("click", () => window.WW_Year.open());
+
   // Register the service worker for installability + offline shell.
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {

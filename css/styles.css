@@ -201,3 +201,67 @@ main {
 .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
 .btn-primary { background: var(--accent); color: #04283a; border-color: var(--accent); font-weight: 600; }
 .btn-secondary { background: transparent; color: var(--muted); }
+
+/* Year-in-review overlay */
+.year-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: linear-gradient(160deg, var(--bg-top), var(--bg-bot));
+  padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+           max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+}
+.year-panel { max-width: 680px; margin: 0 auto; }
+.year-head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 2px 10px;
+  background: linear-gradient(var(--bg-top), var(--bg-top) 70%, transparent);
+}
+.year-head h2 { margin: 0; font-size: 1.15rem; }
+.year-sub { color: var(--muted); font-size: 0.8rem; margin: 0 0 12px; }
+
+.year-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+.year-hero-num { font-size: 2.6rem; font-weight: 800; color: var(--good); line-height: 1; }
+.year-hero-lbl { font-size: 0.9rem; }
+.year-hero-lbl span { color: var(--muted); font-size: 0.76rem; }
+
+.hm-section { margin-bottom: 16px; }
+.hm-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.hm-title { font-weight: 600; font-size: 0.95rem; }
+.hm-stat { color: var(--muted); font-size: 0.76rem; text-align: right; }
+.heatmap { display: block; width: 100%; height: auto; overflow: visible; }
+.heatmap .hm-month { fill: var(--muted); font-size: 8px; }
+.heatmap .hm-wd { fill: var(--muted); font-size: 7px; }
+
+.hm-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin: 4px 0 14px;
+}
+.hm-legend i { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+.year-foot { color: var(--muted); font-size: 0.72rem; line-height: 1.4; margin: 0 0 8px; }

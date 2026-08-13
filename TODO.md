@@ -26,10 +26,7 @@ conditions are inside my rideable window (configurable min/max per metric).
 
 ## To Do
 
-### Manual steps to go live (need repo owner)
-- [ ] Enable GitHub Pages: repo **Settings → Pages → Source: GitHub Actions**
-- [ ] Merge `claude/good-morning-xonl5b` → `main` to trigger the first deploy
-- [ ] Install on phone from the live URL and confirm the home-screen icon
+_Nothing queued — send a feature request and it'll show up here._
 
 ## Done
 
@@ -83,3 +80,12 @@ conditions are inside my rideable window (configurable min/max per metric).
 ### Epic 9 — Wind direction
 - [x] Show wind direction on the wind card (compass point it blows *from*,
       degrees, and an arrow pointing the way the wind travels)
+
+### Epic 10 — Year-in-review rideability infographic
+- [x] 📅 button opens a full-screen "year view" for the current location
+- [x] Fetch a year of data: NOAA hourly tide predictions + Open-Meteo
+      historical archive (past 12 months) for wind & temperature
+- [x] Per day, compute daytime hours each parameter is rideable (uses the
+      user's configured thresholds; daylight via Open-Meteo `is_day`)
+- [x] Infographic: calendar heatmaps for tide, wind, temperature, and a
+      combined "GO" (all three) view, with GO-day count and seasonal stats

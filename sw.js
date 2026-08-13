@@ -1,6 +1,6 @@
 /* Service worker: cache the app shell so wing-weather installs and loads
    offline. API responses (NOAA / Open-Meteo) always go to the network. */
-const CACHE = "wing-weather-v7";
+const CACHE = "wing-weather-v8";
 const SHELL = [
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ const SHELL = [
   "./js/storage.js",
   "./js/api.js",
   "./js/ui.js",
+  "./js/year.js",
   "./js/app.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",

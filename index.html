@@ -19,6 +19,7 @@
     <h1>🪁 Wing Weather</h1>
     <div class="header-actions">
       <span class="location">Alameda, CA</span>
+      <button id="year-btn" class="icon-btn" aria-label="Year in review" title="Year in review">📅</button>
       <button id="settings-btn" class="icon-btn" aria-label="Settings" title="Settings">⚙️</button>
     </div>
   </header>
@@ -70,10 +71,24 @@
     <span>Data: NOAA CO-OPS &amp; Open-Meteo</span>
   </footer>
 
+  <!-- Year-in-review full-screen overlay -->
+  <div id="year-overlay" class="year-overlay" hidden>
+    <div class="year-panel">
+      <div class="year-head">
+        <h2>📅 Year in review</h2>
+        <button id="year-close" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+      <div id="year-body" class="year-body">
+        <p class="status">Loading…</p>
+      </div>
+    </div>
+  </div>
+
   <script src="./js/config.js"></script>
   <script src="./js/storage.js"></script>
   <script src="./js/api.js"></script>
   <script src="./js/ui.js"></script>
+  <script src="./js/year.js"></script>
   <script src="./js/app.js"></script>
 </body>
 </html>
