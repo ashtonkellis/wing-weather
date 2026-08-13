@@ -1,6 +1,6 @@
 {
-  "name": "Wing Weather — Alameda",
-  "short_name": "WingWx",
+  "name": "Wing Weather",
+  "short_name": "Wing Weather",
   "description": "Tide, wind, and temperature for wing foiling near Alameda.",
   "start_url": "./index.html",
   "scope": "./",
