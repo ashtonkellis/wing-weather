@@ -38,6 +38,10 @@
 
   document.getElementById("year-btn").addEventListener("click", () => window.WW_Year.open());
 
+  // Show the app version in the footer (single source of truth: config.js).
+  const versionEl = document.getElementById("app-version");
+  if (versionEl) versionEl.textContent = "v" + window.WW_CONFIG.version;
+
   // Register the service worker for installability + offline shell.
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {

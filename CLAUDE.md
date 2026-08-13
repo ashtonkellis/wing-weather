@@ -12,3 +12,20 @@ We track feature work in `TODO.md`, which has a **To Do** section and a
 
 Keep `TODO.md` current as part of doing the work — updating it is not a
 separate step to wait for.
+
+## Workflow: app version on every deploy
+
+The app shows its version in the footer. It is a single source of truth in
+`js/config.js` as `WW_CONFIG.version` (e.g. `"9"`), rendered as `v<version>`.
+
+On **every deploy** (any fix or feature that ships to GitHub Pages):
+
+1. Bump `WW_CONFIG.version` in `js/config.js`.
+2. Keep the service-worker cache in sync: set `sw.js` `CACHE` to
+   `"wing-weather-v<version>"` (same number). This also busts the SW cache so
+   returning visitors update.
+3. After pushing, **tell the user which version they should see** in the
+   footer, so they can confirm the update reached their phone (they may need
+   to reopen the app once to pick up the new service worker).
+
+Bump the version by 1 each deploy unless the user asks for a different scheme.
