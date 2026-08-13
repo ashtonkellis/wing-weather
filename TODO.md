@@ -71,3 +71,10 @@ conditions are inside my rideable window (configurable min/max per metric).
 - [x] Show the **entire day** (midnight→midnight) on every chart
 - [x] Vertical **"now" marker** on each chart, with a legend chip
 - [x] Overlay **gusts as a dotted line** on the wind chart (peak in legend)
+
+### Epic 8 — Compact, phone-friendly layout
+- [x] Compress vertically so it fits an iPhone with no scrolling
+      (verified at 390×844, 375×812, and 375×667)
+- [x] Respect the notch / Dynamic Island via `safe-area-inset` (nothing hidden)
+- [x] Shade **nighttime** (before sunrise / after sunset) on every chart
+- [x] Lower default min wind speed to **7 kn**

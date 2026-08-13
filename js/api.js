@@ -87,7 +87,7 @@ window.WW_Api = (function () {
       `?latitude=${latitude}&longitude=${longitude}` +
       "&current=temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m" +
       "&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m" +
-      "&daily=sunset" +
+      "&daily=sunrise,sunset" +
       "&temperature_unit=fahrenheit&wind_speed_unit=kn&timezone=" + encodeURIComponent(TZ) +
       "&forecast_days=2";
 
@@ -95,14 +95,17 @@ window.WW_Api = (function () {
     const cur = data.current || {};
     const now = wallClock(TZ);
     const today = now.slice(0, 10);
-    // Today's sunset (for display context in the footer).
-    const sunset = data.daily && data.daily.sunset ? data.daily.sunset[0] : fallbackEnd(now);
+    // Today's sunrise/sunset (footer context + night shading on charts).
+    const daily = data.daily || {};
+    const sunrise = daily.sunrise ? daily.sunrise[0] : null;
+    const sunset = daily.sunset ? daily.sunset[0] : fallbackEnd(now);
 
     const windSeries = hourlyDay(data.hourly, "wind_speed_10m", today);
     const gustSeries = hourlyDay(data.hourly, "wind_gusts_10m", today);
     const tempSeries = hourlyDay(data.hourly, "temperature_2m", today);
 
     return {
+      sunrise: sunrise,
       sunset: sunset,
       temp: { value: cur.temperature_2m, unit: "°F", series: tempSeries },
       wind: {
@@ -148,6 +151,7 @@ window.WW_Api = (function () {
       tide,
       temp: wx ? wx.temp : null,
       wind: wx ? wx.wind : null,
+      sunrise: wx ? wx.sunrise : null,
       sunset: wx && wx.sunset ? wx.sunset : fallbackEnd(now),
       now,
       fetchedAt: new Date(),

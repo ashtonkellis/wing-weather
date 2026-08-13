@@ -19,8 +19,9 @@ window.WW_UI = (function () {
     el.refresh.hidden = !isError;
   }
 
-  let currentSunset = null; // ISO string: today's sunset (footer context)
-  let currentNow = null;    // ISO string: "now", for the now-marker on charts
+  let currentSunrise = null; // ISO string: today's sunrise (night shading)
+  let currentSunset = null;  // ISO string: today's sunset (footer + shading)
+  let currentNow = null;     // ISO string: "now", for the now-marker on charts
 
   function hhmm(t) {
     return t && t.length >= 16 ? t.slice(11, 16) : "";
@@ -44,6 +45,7 @@ window.WW_UI = (function () {
     el.status.hidden = true;
     el.cards.hidden = false;
     el.cards.innerHTML = "";
+    currentSunrise = conditions.sunrise || null;
     currentSunset = conditions.sunset || null;
     currentNow = conditions.now || null;
 
@@ -64,8 +66,8 @@ window.WW_UI = (function () {
     const value = tide.value;
     let sub = "";
     if (tide.nextExtreme) {
-      sub = `Next ${tide.nextExtreme.type.toLowerCase()}: ` +
-        `${tide.nextExtreme.v.toFixed(1)} ft @ ${hhmm(tide.nextExtreme.t)}`;
+      sub = `next ${tide.nextExtreme.type.toLowerCase()} ` +
+        `${tide.nextExtreme.v.toFixed(1)} ft · ${fmtTime(tide.nextExtreme.t)}`;
     }
     const trendArrow = tide.trend === "rising" ? " ↑" : tide.trend === "falling" ? " ↓" : "";
     return buildCard(defaults.tide, value, range, {
@@ -77,9 +79,8 @@ window.WW_UI = (function () {
 
   function windCard(wind, range) {
     if (!wind || wind.value == null) return errorCard(defaults.wind, "Wind data unavailable");
-    const sub = wind.gust != null ? `Gusts to ${Math.round(wind.gust)} kn` : "";
+    // Gusts appear in the chart legend, so no separate sub-line is needed.
     return buildCard(defaults.wind, wind.value, range, {
-      sub,
       series: wind.series,
       overlay: { series: wind.gustSeries, label: "gusts" },
     });
@@ -101,20 +102,17 @@ window.WW_UI = (function () {
     const shown = meta.unit === "kn" || meta.unit === "°F"
       ? Math.round(value) : value.toFixed(1);
 
-    const rangeRow = range.max == null
-      ? `<span>min ${range.min} ${meta.unit}</span><span>no max</span>`
-      : `<span>min ${range.min} ${meta.unit}</span><span>max ${range.max} ${meta.unit}</span>`;
-
     card.innerHTML = `
       <div class="card-top">
         <div>
           <p class="card-title">${meta.icon} ${meta.label}</p>
           <p class="card-value">${shown}<span class="card-unit"> ${meta.unit}</span>${opts.valueSuffix || ""}</p>
         </div>
-        <span class="badge ${inRange ? "in-range" : "out-range"}">${inRange ? "✓ Rideable" : "✗ Out of range"}</span>
-      </div>
-      ${opts.sub ? `<p class="sub">${opts.sub}</p>` : ""}
-      <div class="range-row">${rangeRow}</div>`;
+        <div class="card-right">
+          <span class="badge ${inRange ? "in-range" : "out-range"}">${inRange ? "✓ Rideable" : "✗ Out"}</span>
+          ${opts.sub ? `<span class="sub">${opts.sub}</span>` : ""}
+        </div>
+      </div>`;
 
     if (opts.series && opts.series.length > 1) {
       card.appendChild(forecast(opts.series, range, meta, opts.overlay));
@@ -166,19 +164,33 @@ window.WW_UI = (function () {
     const bandY = Math.min(bandTop, bandBot);
     const bandH = Math.abs(bandBot - bandTop);
 
-    const label = "Full day";
-    const summary = `${fmtVal(dataLo, meta.unit)}–${fmtVal(dataHi, meta.unit)} ${meta.unit}`;
+    // Left label = the rideable threshold; right = the day's actual range.
+    const label = range.max == null
+      ? `ride ≥${range.min} ${meta.unit}`
+      : `ride ${range.min}–${range.max} ${meta.unit}`;
+    const summary = `day ${fmtVal(dataLo, meta.unit)}–${fmtVal(dataHi, meta.unit)}`;
     const mid = series[Math.floor((series.length - 1) / 2)];
 
-    // Vertical "now" marker, placed within the series' own time span.
+    // Map an ISO time to an x within the series' own time span (clamped).
+    const t0 = minutesOf(series[0].t), tN = minutesOf(series[series.length - 1].t);
+    const xForTime = (iso) => {
+      if (!iso || tN <= t0) return null;
+      const f = (minutesOf(iso) - t0) / (tN - t0);
+      return Math.max(0, Math.min(W, pad + f * (W - 2 * pad)));
+    };
+
+    // Nighttime shading: before sunrise and after sunset.
+    let nightSvg = "";
+    const xsr = xForTime(currentSunrise), xss = xForTime(currentSunset);
+    if (xsr != null && xsr > 0) nightSvg += `<rect x="0" y="0" width="${xsr.toFixed(1)}" height="${H}" fill="#05182b" opacity="0.42" />`;
+    if (xss != null && xss < W) nightSvg += `<rect x="${xss.toFixed(1)}" y="0" width="${(W - xss).toFixed(1)}" height="${H}" fill="#05182b" opacity="0.42" />`;
+
+    // Vertical "now" marker.
     let nowSvg = "";
-    if (currentNow && series.length > 1) {
-      const t0 = minutesOf(series[0].t), tN = minutesOf(series[series.length - 1].t), tn = minutesOf(currentNow);
-      if (tN > t0 && tn >= t0 && tn <= tN) {
-        const nx = pad + ((tn - t0) / (tN - t0)) * (W - 2 * pad);
-        nowSvg = `<line x1="${nx.toFixed(1)}" y1="0" x2="${nx.toFixed(1)}" y2="${H}" stroke="var(--text)"
-          stroke-width="1.2" vector-effect="non-scaling-stroke" opacity="0.6" />`;
-      }
+    const nx = xForTime(currentNow);
+    if (nx != null && minutesOf(currentNow) >= t0 && minutesOf(currentNow) <= tN) {
+      nowSvg = `<line x1="${nx.toFixed(1)}" y1="0" x2="${nx.toFixed(1)}" y2="${H}" stroke="var(--text)"
+        stroke-width="1.2" vector-effect="non-scaling-stroke" opacity="0.6" />`;
     }
 
     const overlaySvg = over
@@ -196,6 +208,7 @@ window.WW_UI = (function () {
     wrap.innerHTML = `
       <div class="forecast-label"><span>${label}</span><span>${summary}</span></div>
       <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+        ${nightSvg}
         <rect x="0" y="${bandY.toFixed(1)}" width="${W}" height="${bandH.toFixed(1)}" fill="rgba(55,214,122,0.14)" />
         ${nowSvg}
         ${overlaySvg}

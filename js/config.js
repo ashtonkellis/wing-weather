@@ -15,7 +15,7 @@ window.WW_CONFIG = {
   // means "no upper limit". Overrides live in localStorage.
   defaults: {
     tide: { min: 1.0, max: null, unit: "ft", label: "Tide height", icon: "🌊" },
-    wind: { min: 12, max: 30, unit: "kn", label: "Wind speed", icon: "💨" },
+    wind: { min: 7, max: 30, unit: "kn", label: "Wind speed", icon: "💨" },
     temp: { min: 50, max: null, unit: "°F", label: "Temperature", icon: "🌡️" },
   },
 };
