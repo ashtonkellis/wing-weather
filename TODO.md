@@ -107,3 +107,5 @@ _Nothing queued — send a feature request and it'll show up here._
 - [x] Banner atop the UI showing the current GO/NO-GO status and today's
       rideable window open/close timestamps (all three metrics in range,
       during daylight); "closes …" hint when a window is currently open.
+- [x] Render it as a horizontal day timeline bar: green = GO, red = NO-GO,
+      with a "now" marker and open/close time ticks (sunrise→sunset span).

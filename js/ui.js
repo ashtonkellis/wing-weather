@@ -139,7 +139,32 @@ window.WW_UI = (function () {
     if (nowMin != null) {
       for (const w of windows) if (nowMin >= w.open && nowMin <= w.close) { closesAt = w.close; break; }
     }
-    return { nowGo, windows, closesAt, nowMin };
+    return { nowGo, windows, closesAt, nowMin, srMin, ssMin };
+  }
+
+  // Compact clock for the timeline ticks: "1:39p", "6a".
+  function fmtClockShort(mins) {
+    const mm = ((mins % 1440) + 1440) % 1440;
+    let h = Math.floor(mm / 60), m = mm % 60;
+    const ap = h < 12 ? "a" : "p";
+    h = h % 12 || 12;
+    return m ? `${h}:${String(m).padStart(2, "0")}${ap}` : `${h}${ap}`;
+  }
+
+  // Split the daylight span into alternating NO-GO / GO segments.
+  function buildSegments(windows, srMin, ssMin) {
+    const total = ssMin - srMin || 1;
+    const segs = [];
+    let cursor = srMin;
+    for (const w of windows) {
+      const o = Math.max(w.open, srMin), c = Math.min(w.close, ssMin);
+      if (o > cursor) segs.push({ go: false, w: (o - cursor) / total * 100 });
+      segs.push({ go: true, w: (c - o) / total * 100 });
+      cursor = c;
+    }
+    if (cursor < ssMin) segs.push({ go: false, w: (ssMin - cursor) / total * 100 });
+    if (!segs.length) segs.push({ go: false, w: 100 });
+    return segs;
   }
 
   function renderBanner(go) {
@@ -148,17 +173,44 @@ window.WW_UI = (function () {
     el.banner.hidden = false;
     el.banner.className = "go-banner " + (go.nowGo ? "go" : "no-go");
 
-    let detail;
-    if (!go.windows.length) {
-      detail = "No rideable window today";
-    } else {
-      const label = go.windows.length > 1 ? "windows" : "window";
-      const list = go.windows.map((w) => fmtSpan(w.open, w.close)).join(" · ");
-      const closing = go.nowGo && go.closesAt != null ? `closes ${fmtClock(go.closesAt)} · ` : "";
-      detail = `${closing}<span class="go-label">${label}</span> ${list}`;
+    const total = (go.ssMin - go.srMin) || 1;
+    const pct = (m) => Math.max(0, Math.min(100, (m - go.srMin) / total * 100));
+
+    // A one-line summary next to the status chip.
+    let sub;
+    if (go.nowGo && go.closesAt != null) sub = `closes ${fmtClock(go.closesAt)}`;
+    else if (go.windows.length) {
+      const next = go.windows.find((w) => w.open > (go.nowMin == null ? -1 : go.nowMin));
+      sub = next ? `opens ${fmtClock(next.open)}` : "done for today";
+    } else sub = "no window today";
+
+    // The segmented day bar.
+    const segs = buildSegments(go.windows, go.srMin, go.ssMin)
+      .map((s) => `<div class="go-seg ${s.go ? "go" : "no"}" style="width:${s.w.toFixed(2)}%"></div>`)
+      .join("");
+    const nowMark = (go.nowMin != null && go.nowMin >= go.srMin && go.nowMin <= go.ssMin)
+      ? `<div class="go-now" style="left:${pct(go.nowMin).toFixed(2)}%"></div>` : "";
+
+    // Time labels: sunrise/sunset at the ends, GO open/close in between.
+    // Show sunrise/sunset at the ends, unless a GO edge is near that end
+    // (then the window time takes priority to avoid overlapping labels).
+    const leftClear = !go.windows.some((w) => pct(w.open) < 12 || pct(w.close) < 12);
+    const rightClear = !go.windows.some((w) => pct(w.open) > 88 || pct(w.close) > 88);
+    let ticks = leftClear ? `<span class="go-tick end-l">${fmtClockShort(go.srMin)}</span>` : "";
+    for (const w of go.windows) {
+      const op = pct(w.open), cp = pct(w.close);
+      if (op > 2 && op < 98) ticks += `<span class="go-tick go-edge" style="left:${op.toFixed(2)}%">${fmtClockShort(w.open)}</span>`;
+      if (cp > 2 && cp < 98) ticks += `<span class="go-tick go-edge" style="left:${cp.toFixed(2)}%">${fmtClockShort(w.close)}</span>`;
     }
+    if (rightClear) ticks += `<span class="go-tick end-r">${fmtClockShort(go.ssMin)}</span>`;
+
     el.banner.innerHTML =
-      `<span class="go-status">${go.nowGo ? "GO" : "NO-GO"}</span><span class="go-detail">${detail}</span>`;
+      `<div class="go-head">
+        <span class="go-status">${go.nowGo ? "GO" : "NO-GO"}</span>
+        <span class="go-sub">${sub}</span>
+      </div>
+      <div class="go-bar">${segs}${nowMark}</div>
+      <div class="go-ticks">${ticks}</div>`;
   }
 
   function tideCard(tide, range) {

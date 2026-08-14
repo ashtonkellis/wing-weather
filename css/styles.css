@@ -84,23 +84,51 @@ main {
 .status { text-align: center; color: var(--muted); margin: 32px 0; }
 .status.error { color: var(--bad); }
 
-/* GO / NO-GO banner above the cards */
+/* GO / NO-GO timeline banner above the cards */
 .go-banner {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
   border: 1px solid var(--card-border);
   border-radius: 12px;
-  padding: 8px 14px;
+  padding: 8px 14px 6px;
   margin-bottom: 8px;
+  background: var(--card);
 }
-.go-banner.go { background: var(--good-bg); border-color: rgba(55, 214, 122, 0.5); }
-.go-banner.no-go { background: var(--bad-bg); border-color: rgba(255, 107, 107, 0.4); }
-.go-status { font-weight: 800; font-size: 1.15rem; letter-spacing: 0.5px; white-space: nowrap; }
+.go-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.go-status { font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px; white-space: nowrap; }
 .go-banner.go .go-status { color: var(--good); }
 .go-banner.no-go .go-status { color: var(--bad); }
-.go-detail { font-size: 0.8rem; color: var(--text); line-height: 1.35; }
-.go-label { color: var(--muted); }
+.go-sub { font-size: 0.76rem; color: var(--muted); }
+
+.go-bar {
+  position: relative;
+  display: flex;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--bad);
+}
+.go-seg { height: 100%; }
+.go-seg.go { background: var(--good); }
+.go-seg.no { background: var(--bad); }
+.go-now {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--text);
+  transform: translateX(-1px);
+  box-shadow: 0 0 0 1px rgba(4, 20, 30, 0.5);
+}
+.go-ticks { position: relative; height: 12px; margin-top: 3px; }
+.go-tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.go-tick.end-l { left: 0; transform: none; }
+.go-tick.end-r { right: 0; left: auto; transform: none; }
+.go-tick.go-edge { color: var(--good); font-weight: 600; }
 
 /* Cards fill the available height and share it evenly. */
 .cards { display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto; min-height: 0; }
