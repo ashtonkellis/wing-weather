@@ -1,6 +1,6 @@
 /* Service worker: cache the app shell so wing-weather installs and loads
    offline. API responses (NOAA / Open-Meteo) always go to the network. */
-const CACHE = "wing-weather-v18";
+const CACHE = "wing-weather-v19";
 const SHELL = [
   "./",
   "./index.html",
@@ -36,16 +36,17 @@ self.addEventListener("fetch", (event) => {
   // Only the app shell (same-origin) is cached; let API calls hit the network.
   if (url.origin !== self.location.origin) return;
 
+  // Serve only from the CURRENT version's cache so a page never mixes files
+  // from different deploys (which caused stale config + new code skew).
   event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+    caches.open(CACHE).then((cache) =>
+      cache.match(req).then((cached) => {
+        if (cached) return cached;
+        return fetch(req).then((res) => {
+          if (res && res.ok) cache.put(req, res.clone());
           return res;
-        })
-        .catch(() => cached);
-    })
+        });
+      })
+    )
   );
 });

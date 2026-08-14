@@ -16,6 +16,11 @@
 
 * { box-sizing: border-box; }
 
+/* The `hidden` attribute must always win, even over class rules that set a
+   `display` (e.g. .onboarding/.cards use display:flex). Without this, setting
+   element.hidden = true does NOT visually hide the element. */
+[hidden] { display: none !important; }
+
 /* Paint the root dark so iOS safe-area insets (e.g. the home-indicator strip)
    never show the default white behind the app. */
 html { background: var(--bg-bot); }

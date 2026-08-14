@@ -81,8 +81,18 @@
   const versionEl = document.getElementById("app-version");
   if (versionEl) versionEl.textContent = "v" + cfg.version;
 
-  // Service worker for installability + offline shell.
+  // Service worker for installability + offline shell. When a new version
+  // takes control, reload once so the page runs a consistent set of files
+  // (fixes stale/mixed-version states on aggressively-caching browsers).
   if ("serviceWorker" in navigator) {
+    let hadController = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!hadController) { hadController = true; return; } // first install: no reload
+      if (reloaded) return;
+      reloaded = true;
+      window.location.reload();
+    });
     window.addEventListener("load", () => {
       navigator.serviceWorker.register("./sw.js").catch(() => {});
     });
@@ -90,18 +100,23 @@
 
   /* ---- location selection / boot ---- */
   function startDashboard(slug) {
-    try { applyLocation(slug); }
-    catch (_) { cfg.active = cfg.resolveLocation(slug); } // never block entry
+    // Leave the picker immediately on tap, before anything that could throw.
     const onb = document.getElementById("onboarding");
     if (onb) onb.hidden = true;
+    try { applyLocation(slug); }
+    catch (_) { cfg.active = cfg.resolveLocation(slug); } // never block entry
     refresh();
   }
 
   function showOnboarding() {
     const list = document.getElementById("onboarding-list");
+    const slugs = Object.keys(cfg.locations || {});
+    // Defensive: if config somehow has no locations, don't get stuck here.
+    if (!slugs.length) { startDashboard(cfg.defaultLocation); return; }
     list.innerHTML = "";
-    for (const slug of Object.keys(cfg.locations)) {
+    for (const slug of slugs) {
       const btn = document.createElement("button");
+      btn.type = "button";
       btn.className = "onboarding-choice";
       btn.textContent = cfg.locations[slug].name;
       btn.addEventListener("click", () => startDashboard(slug));
