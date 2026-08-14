@@ -35,11 +35,16 @@
     cfg.active = cfg.resolveLocation(slug);
     slug = cfg.active.slug;
     rememberLocation(slug);
-    const url = new URL(window.location.href);
-    if (url.searchParams.get("loc") !== slug) {
-      url.searchParams.set("loc", slug);
-      window.history.replaceState({}, "", url); // shareable, and remembered
-    }
+    // Reflect the choice in the URL (shareable). Non-fatal: some browsers
+    // (notably iOS Safari) can throw on replaceState — never let that block
+    // navigation into the app.
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("loc") !== slug) {
+        params.set("loc", slug);
+        window.history.replaceState({}, "", "?" + params.toString());
+      }
+    } catch (_) { /* URL update is best-effort */ }
     const locSelect = document.getElementById("loc-select");
     if (locSelect) locSelect.value = slug;
   }
@@ -85,7 +90,8 @@
 
   /* ---- location selection / boot ---- */
   function startDashboard(slug) {
-    applyLocation(slug);
+    try { applyLocation(slug); }
+    catch (_) { cfg.active = cfg.resolveLocation(slug); } // never block entry
     const onb = document.getElementById("onboarding");
     if (onb) onb.hidden = true;
     refresh();
