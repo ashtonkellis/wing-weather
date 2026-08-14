@@ -4,6 +4,7 @@ window.WW_UI = (function () {
 
   const el = {
     status: document.getElementById("status"),
+    banner: document.getElementById("go-banner"),
     cards: document.getElementById("cards"),
     updated: document.getElementById("updated"),
     refresh: document.getElementById("refresh-btn"),
@@ -14,6 +15,7 @@ window.WW_UI = (function () {
     el.status.hidden = false;
     el.status.textContent = message;
     el.status.classList.toggle("error", !!isError);
+    if (el.banner) el.banner.hidden = true;
     el.cards.hidden = true;
     el.updated.hidden = true;
     el.refresh.hidden = !isError;
@@ -56,6 +58,8 @@ window.WW_UI = (function () {
     currentSunset = conditions.sunset || null;
     currentNow = conditions.now || null;
 
+    renderBanner(computeGo(conditions, thresholds));
+
     el.cards.appendChild(tideCard(conditions.tide, thresholds.tide));
     el.cards.appendChild(windCard(conditions.wind, thresholds.wind));
     el.cards.appendChild(tempCard(conditions.temp, thresholds.temp));
@@ -66,6 +70,95 @@ window.WW_UI = (function () {
       ? `Updated ${updatedAt} · ☀️ Sunset ${fmtTime(currentSunset)}`
       : `Updated ${updatedAt}`;
     el.refresh.hidden = false;
+  }
+
+  /* ---- GO / NO-GO banner ---- */
+  function inRange(v, mn, mx) { return (mn == null || v >= mn) && (mx == null || v <= mx); }
+
+  function seriesMinutes(series) {
+    return series.map((p) => ({ m: minutesOf(p.t), v: p.v }));
+  }
+  function interpAt(sm, m) {
+    if (m <= sm[0].m) return sm[0].v;
+    const last = sm[sm.length - 1];
+    if (m >= last.m) return last.v;
+    for (let i = 1; i < sm.length; i++) {
+      if (sm[i].m >= m) {
+        const a = sm[i - 1], b = sm[i];
+        return a.v + (b.v - a.v) * ((m - a.m) / (b.m - a.m || 1));
+      }
+    }
+    return last.v;
+  }
+
+  // Minutes-of-day -> "1:15 PM"; fmtSpan shares the meridiem when possible.
+  function fmtClock(mins) {
+    const mm = ((mins % 1440) + 1440) % 1440;
+    let h = Math.floor(mm / 60), m = mm % 60;
+    const ap = h < 12 ? "AM" : "PM";
+    h = h % 12 || 12;
+    return `${h}:${String(m).padStart(2, "0")} ${ap}`;
+  }
+  function fmtSpan(a, b) {
+    const apOf = (x) => (Math.floor((((x % 1440) + 1440) % 1440) / 60) < 12 ? "AM" : "PM");
+    if (apOf(a) === apOf(b)) return `${fmtClock(a).replace(/ [AP]M$/, "")}–${fmtClock(b)}`;
+    return `${fmtClock(a)}–${fmtClock(b)}`;
+  }
+
+  // When are all three metrics simultaneously rideable, during daylight?
+  function computeGo(conditions, th) {
+    const { tide, wind, temp, sunrise, sunset, now } = conditions;
+    if (!tide || !wind || !temp || !tide.series || !wind.series || !temp.series) return null;
+
+    const srMin = sunrise ? minutesOf(sunrise) : 0;
+    const ssMin = sunset ? minutesOf(sunset) : 24 * 60;
+    const nowMin = now ? minutesOf(now) : null;
+
+    const nowDay = nowMin != null && nowMin >= srMin && nowMin <= ssMin;
+    const nowGo = nowDay &&
+      inRange(tide.value, th.tide.min, th.tide.max) &&
+      inRange(wind.value, th.wind.min, th.wind.max) &&
+      inRange(temp.value, th.temp.min, th.temp.max);
+
+    const tSM = seriesMinutes(tide.series), wSM = seriesMinutes(wind.series), pSM = seriesMinutes(temp.series);
+    const STEP = 15;
+    const windows = [];
+    let openM = null;
+    for (let m = srMin; m <= ssMin; m += STEP) {
+      const go =
+        inRange(interpAt(tSM, m), th.tide.min, th.tide.max) &&
+        inRange(interpAt(wSM, m), th.wind.min, th.wind.max) &&
+        inRange(interpAt(pSM, m), th.temp.min, th.temp.max);
+      if (go && openM == null) openM = m;
+      if (!go && openM != null) { windows.push({ open: openM, close: m }); openM = null; }
+    }
+    if (openM != null) windows.push({ open: openM, close: ssMin });
+
+    // Is a window currently open, and when does it close?
+    let closesAt = null;
+    if (nowMin != null) {
+      for (const w of windows) if (nowMin >= w.open && nowMin <= w.close) { closesAt = w.close; break; }
+    }
+    return { nowGo, windows, closesAt, nowMin };
+  }
+
+  function renderBanner(go) {
+    if (!el.banner) return;
+    if (!go) { el.banner.hidden = true; return; }
+    el.banner.hidden = false;
+    el.banner.className = "go-banner " + (go.nowGo ? "go" : "no-go");
+
+    let detail;
+    if (!go.windows.length) {
+      detail = "No rideable window today";
+    } else {
+      const label = go.windows.length > 1 ? "windows" : "window";
+      const list = go.windows.map((w) => fmtSpan(w.open, w.close)).join(" · ");
+      const closing = go.nowGo && go.closesAt != null ? `closes ${fmtClock(go.closesAt)} · ` : "";
+      detail = `${closing}<span class="go-label">${label}</span> ${list}`;
+    }
+    el.banner.innerHTML =
+      `<span class="go-status">${go.nowGo ? "GO" : "NO-GO"}</span><span class="go-detail">${detail}</span>`;
   }
 
   function tideCard(tide, range) {

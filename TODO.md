@@ -102,3 +102,8 @@ _Nothing queued — send a feature request and it'll show up here._
 ### Epic 12 — Tap-to-inspect charts
 - [x] Tap/drag a chart to show a cursor with the time (and value) at that
       point; wind also shows the gust value. Persists after release.
+
+### Epic 13 — GO / NO-GO banner
+- [x] Banner atop the UI showing the current GO/NO-GO status and today's
+      rideable window open/close timestamps (all three metrics in range,
+      during daylight); "closes …" hint when a window is currently open.
