@@ -41,7 +41,7 @@ window.WW_Api = (function () {
     const base =
       "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter" +
       "?product=predictions&application=wing-weather&datum=MLLW" +
-      "&units=english&time_zone=lst_ldt&format=json&station=" + cfg.tideStation;
+      "&units=english&time_zone=lst_ldt&format=json&station=" + cfg.active.tideStation;
 
     const [sixMin, hilo] = await Promise.all([
       // 6-minute points across the whole day (midnight to midnight)
@@ -81,7 +81,7 @@ window.WW_Api = (function () {
 
   /* ---- Open-Meteo wind + temperature ---- */
   async function getWeather() {
-    const { latitude, longitude } = cfg.location;
+    const { latitude, longitude } = cfg.active;
     const url =
       "https://api.open-meteo.com/v1/forecast" +
       `?latitude=${latitude}&longitude=${longitude}` +

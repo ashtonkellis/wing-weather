@@ -64,7 +64,7 @@ window.WW_Year = (function () {
 
   async function fetchYear() {
     const th = window.WW_Storage.load();
-    const { latitude, longitude } = cfg.location;
+    const { latitude, longitude } = cfg.active;
 
     // Archive lags ~5 days; end a week back and span 364 days before it.
     const end = new Date(); end.setDate(end.getDate() - 7);
@@ -79,7 +79,7 @@ window.WW_Year = (function () {
     const tideUrl =
       "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter" +
       "?product=predictions&application=wing-weather&interval=h&datum=MLLW&units=english" +
-      "&time_zone=lst_ldt&format=json&station=" + cfg.tideStation +
+      "&time_zone=lst_ldt&format=json&station=" + cfg.active.tideStation +
       `&begin_date=${ymdNoaa(start)}&end_date=${ymdNoaa(end)}`;
 
     const [arch, tide] = await Promise.all([fetchJson(archiveUrl), fetchJson(tideUrl)]);
@@ -194,7 +194,7 @@ window.WW_Year = (function () {
     const pMax = th.temp.max == null ? "" : `–${th.temp.max}`;
 
     els.body.innerHTML = `
-      <p class="year-sub">${cfg.location.name} · ${range} · daylight hours only</p>
+      <p class="year-sub">${cfg.active.name} · ${range} · daylight hours only</p>
 
       <div class="year-hero">
         <div class="year-hero-num">${goDays}</div>
@@ -217,5 +217,8 @@ window.WW_Year = (function () {
   // Exposed for the inline retry button.
   function _retry() { loaded = false; load(); }
 
-  return { open, close, _retry };
+  // Force a refetch next open (e.g. after the location changes).
+  function invalidate() { loaded = false; }
+
+  return { open, close, _retry, invalidate };
 })();

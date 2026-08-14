@@ -39,8 +39,18 @@ body {
   padding: 6px 8px 6px;
 }
 .app-header h1 { font-size: 1.15rem; margin: 0; }
-.header-actions { display: flex; align-items: center; gap: 10px; }
-.location { color: var(--muted); font-size: 0.8rem; }
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.loc-select {
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 3px 6px;
+  max-width: 44vw;
+}
+.loc-select option { color: #04283a; }
 
 .icon-btn {
   background: transparent;

@@ -89,3 +89,10 @@ _Nothing queued — send a feature request and it'll show up here._
       user's configured thresholds; daylight via Open-Meteo `is_day`)
 - [x] Infographic: calendar heatmaps for tide, wind, temperature, and a
       combined "GO" (all three) view, with GO-day count and seasonal stats
+
+### Epic 11 — Multiple selectable locations
+- [x] Locations map in config (each: name, lat/lon, NOAA tide station);
+      first location is `harbor-bay-club`
+- [x] Active location resolved from `?loc=<slug>` URL param (else default)
+- [x] In-app header picker to switch locations; updates the URL (shareable)
+      and refetches the dashboard + year view for the new spot

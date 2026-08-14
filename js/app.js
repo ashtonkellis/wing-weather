@@ -38,6 +38,28 @@
 
   document.getElementById("year-btn").addEventListener("click", () => window.WW_Year.open());
 
+  // Location picker: populate from config, reflect ?loc=, switch on change.
+  const locSelect = document.getElementById("loc-select");
+  if (locSelect) {
+    const locs = window.WW_CONFIG.locations;
+    for (const slug of Object.keys(locs)) {
+      const opt = document.createElement("option");
+      opt.value = slug;
+      opt.textContent = locs[slug].name;
+      locSelect.appendChild(opt);
+    }
+    locSelect.value = window.WW_CONFIG.active.slug;
+    locSelect.addEventListener("change", () => {
+      const slug = locSelect.value;
+      const url = new URL(window.location.href);
+      url.searchParams.set("loc", slug);
+      window.history.replaceState({}, "", url); // shareable URL for this spot
+      window.WW_CONFIG.active = window.WW_CONFIG.resolveLocation(slug);
+      window.WW_Year.invalidate(); // year data is per-location
+      refresh();
+    });
+  }
+
   // Show the app version in the footer (single source of truth: config.js).
   const versionEl = document.getElementById("app-version");
   if (versionEl) versionEl.textContent = "v" + window.WW_CONFIG.version;
