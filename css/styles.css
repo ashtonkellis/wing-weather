@@ -212,6 +212,39 @@ main {
 .btn-primary { background: var(--accent); color: #04283a; border-color: var(--accent); font-weight: 600; }
 .btn-secondary { background: transparent; color: var(--muted); }
 
+/* First-run location picker */
+.onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, var(--bg-top), var(--bg-bot));
+  padding: max(16px, env(safe-area-inset-top)) 20px max(16px, env(safe-area-inset-bottom));
+}
+.onboarding-card { text-align: center; max-width: 360px; width: 100%; }
+.onboarding-icon { font-size: 3rem; line-height: 1; }
+.onboarding-card h2 { margin: 8px 0 2px; font-size: 1.6rem; }
+.onboarding-card p { color: var(--muted); margin: 0 0 20px; }
+.onboarding-list { display: flex; flex-direction: column; gap: 10px; }
+.onboarding-choice {
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--card-border);
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.onboarding-choice::after { content: "→"; color: var(--muted); }
+.onboarding-choice:active { border-color: var(--accent); }
+
 /* Year-in-review overlay */
 .year-overlay {
   position: fixed;

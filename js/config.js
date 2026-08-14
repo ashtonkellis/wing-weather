@@ -2,7 +2,7 @@
 window.WW_CONFIG = {
   // App version, shown in the footer. Bump on every deploy and keep
   // sw.js CACHE ("wing-weather-v<version>") in sync. See CLAUDE.md.
-  version: "15",
+  version: "16",
   // Selectable wing-foil locations. To add one, add an entry here:
   //   "your-slug": { name, latitude, longitude, tideStation }
   // It then appears in the in-app picker and works via ?loc=your-slug.
@@ -36,6 +36,6 @@ WW_CONFIG.resolveLocation = function (slug) {
   const key = slug && locs[slug] ? slug : WW_CONFIG.defaultLocation;
   return Object.assign({ slug: key }, locs[key]);
 };
-WW_CONFIG.active = WW_CONFIG.resolveLocation(
-  new URLSearchParams(window.location.search).get("loc")
-);
+// The active location is chosen at startup by app.js — from the ?loc= URL
+// param, a saved preference, or the first-run location picker. Null until then.
+WW_CONFIG.active = null;

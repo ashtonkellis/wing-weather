@@ -96,3 +96,5 @@ _Nothing queued — send a feature request and it'll show up here._
 - [x] Active location resolved from `?loc=<slug>` URL param (else default)
 - [x] In-app header picker to switch locations; updates the URL (shareable)
       and refetches the dashboard + year view for the new spot
+- [x] First-run location picker; remembers the choice and auto-routes
+      returning visitors to `?loc=<slug>`
