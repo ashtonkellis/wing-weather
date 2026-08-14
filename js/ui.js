@@ -220,21 +220,71 @@ window.WW_UI = (function () {
 
     wrap.innerHTML = `
       <div class="forecast-label"><span>${label}</span><span>${summary}</span></div>
-      <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
-        ${nightSvg}
-        <rect x="0" y="${bandY.toFixed(1)}" width="${W}" height="${bandH.toFixed(1)}" fill="rgba(55,214,122,0.14)" />
-        ${nowSvg}
-        ${overlaySvg}
-        <polyline points="${line(series)}" fill="none" stroke="#2fb8d4" stroke-width="1.6"
-          stroke-linejoin="round" stroke-linecap="round" />
-      </svg>
+      <div class="spark-wrap">
+        <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+          ${nightSvg}
+          <rect x="0" y="${bandY.toFixed(1)}" width="${W}" height="${bandH.toFixed(1)}" fill="rgba(55,214,122,0.14)" />
+          ${nowSvg}
+          ${overlaySvg}
+          <polyline points="${line(series)}" fill="none" stroke="#2fb8d4" stroke-width="1.6"
+            stroke-linejoin="round" stroke-linecap="round" />
+        </svg>
+        <div class="spark-cursor" hidden></div>
+        <div class="spark-tip" hidden></div>
+      </div>
       <div class="spark-ticks">
         <span>${hhmm(series[0].t)}</span>
         <span>${hhmm(mid.t)}</span>
         <span>${hhmm(series[series.length - 1].t)}</span>
       </div>
       ${legend}`;
+
+    attachScrub(wrap, series, meta, over, overlay);
     return wrap;
+  }
+
+  /* Tap/drag a chart to read the time (and value) at that point. */
+  function attachScrub(wrap, series, meta, over, overlay) {
+    const box = wrap.querySelector(".spark-wrap");
+    const cursor = wrap.querySelector(".spark-cursor");
+    const tip = wrap.querySelector(".spark-tip");
+    const n = series.length;
+
+    function at(x, i0, i1, f) {
+      return series[i0][x] + (series[i1][x] - series[i0][x]) * f;
+    }
+    function show(clientX) {
+      const rect = box.getBoundingClientRect();
+      let f = (clientX - rect.left) / rect.width;
+      f = Math.max(0, Math.min(1, f));
+      const idx = f * (n - 1);
+      const i0 = Math.floor(idx), i1 = Math.min(i0 + 1, n - 1), t = idx - i0;
+      const mins = Math.round(minutesOf(series[i0].t) + (minutesOf(series[i1].t) - minutesOf(series[i0].t)) * t);
+      const hh = String(Math.floor(mins / 60) % 24).padStart(2, "0");
+      const mm = String(((mins % 60) + 60) % 60).padStart(2, "0");
+      const val = at("v", i0, i1, t);
+      let text = `${hh}:${mm} · ${fmtVal(val, meta.unit)} ${meta.unit}`;
+      if (over) {
+        const gv = over[i0].v + (over[i1].v - over[i0].v) * t;
+        text += ` · ${overlay.label} ${fmtVal(gv, meta.unit)}`;
+      }
+      cursor.style.left = (f * 100) + "%";
+      tip.style.left = (Math.max(0.12, Math.min(0.88, f)) * 100) + "%";
+      tip.textContent = text;
+      cursor.hidden = false;
+      tip.hidden = false;
+    }
+
+    let active = false;
+    box.addEventListener("pointerdown", (e) => {
+      active = true;
+      if (box.setPointerCapture) { try { box.setPointerCapture(e.pointerId); } catch (_) {} }
+      show(e.clientX);
+    });
+    box.addEventListener("pointermove", (e) => { if (active) show(e.clientX); });
+    const end = () => { active = false; };
+    box.addEventListener("pointerup", end);
+    box.addEventListener("pointercancel", end);
   }
 
   /* ---- Settings dialog ---- */

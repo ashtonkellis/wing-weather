@@ -98,3 +98,7 @@ _Nothing queued — send a feature request and it'll show up here._
       and refetches the dashboard + year view for the new spot
 - [x] First-run location picker; remembers the choice and auto-routes
       returning visitors to `?loc=<slug>`
+
+### Epic 12 — Tap-to-inspect charts
+- [x] Tap/drag a chart to show a cursor with the time (and value) at that
+      point; wind also shows the gust value. Persists after release.
