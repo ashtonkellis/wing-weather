@@ -176,7 +176,11 @@ main {
   display: flex;
   flex-direction: column;
   flex: 1 1 0;
-  min-height: 0;
+  /* Grow to fill on tall screens, but never shrink below a height that fits
+     the card's content (that caused the chart to spill past the border).
+     A fixed floor is used because the SVG's aspect ratio inflates
+     min-content. If the total is too tall, the page scrolls instead. */
+  min-height: 140px;
 }
 .card.in-range { border-left-color: var(--good); }
 .card.out-range { border-left-color: var(--bad); }
@@ -218,7 +222,7 @@ main {
 .spark-wrap {
   position: relative;
   flex: 1 1 auto;
-  min-height: 40px;
+  min-height: 32px;
   touch-action: none; /* let horizontal scrubbing work without page scroll */
 }
 .spark { display: block; width: 100%; height: 100%; }
