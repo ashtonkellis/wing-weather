@@ -86,12 +86,17 @@ main {
 
 /* GO / NO-GO timeline banner above the cards */
 .go-banner {
+  /* Match the cards' horizontal geometry (4px left border + 12px padding)
+     so the bar's left/right edges align with the charts underneath. */
   border: 1px solid var(--card-border);
+  border-left: 4px solid var(--muted);
   border-radius: 12px;
-  padding: 8px 14px 6px;
+  padding: 8px 12px 6px;
   margin-bottom: 8px;
   background: var(--card);
 }
+.go-banner.go { border-left-color: var(--good); }
+.go-banner.no-go { border-left-color: var(--bad); }
 .go-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
 .go-status { font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px; white-space: nowrap; }
 .go-banner.go .go-status { color: var(--good); }

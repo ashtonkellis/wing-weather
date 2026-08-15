@@ -114,12 +114,8 @@ window.WW_UI = (function () {
     const ssMin = sunset ? minutesOf(sunset) : 24 * 60;
     const nowMin = now ? minutesOf(now) : null;
 
-    const nowDay = nowMin != null && nowMin >= srMin && nowMin <= ssMin;
-    const nowGo = nowDay &&
-      inRange(tide.value, th.tide.min, th.tide.max) &&
-      inRange(wind.value, th.wind.min, th.wind.max) &&
-      inRange(temp.value, th.temp.min, th.temp.max);
-
+    // GO windows: contiguous daylight stretches where all three metrics are
+    // in range (sampled every 15 min from the interpolated series).
     const tSM = seriesMinutes(tide.series), wSM = seriesMinutes(wind.series), pSM = seriesMinutes(temp.series);
     const STEP = 15;
     const windows = [];
@@ -134,11 +130,14 @@ window.WW_UI = (function () {
     }
     if (openM != null) windows.push({ open: openM, close: ssMin });
 
-    // Is a window currently open, and when does it close?
+    // "Now" status is derived from the timeline so the chip always agrees
+    // with where the now-marker sits on the bar: GO iff now is in a window.
     let closesAt = null;
     if (nowMin != null) {
       for (const w of windows) if (nowMin >= w.open && nowMin <= w.close) { closesAt = w.close; break; }
     }
+    const nowGo = closesAt != null;
+
     return { nowGo, windows, closesAt, nowMin, srMin, ssMin };
   }
 
@@ -151,19 +150,19 @@ window.WW_UI = (function () {
     return m ? `${h}:${String(m).padStart(2, "0")}${ap}` : `${h}${ap}`;
   }
 
-  // Split the daylight span into alternating NO-GO / GO segments.
+  // Split the FULL day (midnight→midnight) into GO / NO-GO segments.
+  // GO only where a window exists; everything else (incl. night) is NO-GO.
   function buildSegments(windows, srMin, ssMin) {
-    const total = ssMin - srMin || 1;
+    const DAY = 1440;
     const segs = [];
-    let cursor = srMin;
+    let cursor = 0;
     for (const w of windows) {
       const o = Math.max(w.open, srMin), c = Math.min(w.close, ssMin);
-      if (o > cursor) segs.push({ go: false, w: (o - cursor) / total * 100 });
-      segs.push({ go: true, w: (c - o) / total * 100 });
+      if (o > cursor) segs.push({ go: false, w: (o - cursor) / DAY * 100 });
+      segs.push({ go: true, w: (c - o) / DAY * 100 });
       cursor = c;
     }
-    if (cursor < ssMin) segs.push({ go: false, w: (ssMin - cursor) / total * 100 });
-    if (!segs.length) segs.push({ go: false, w: 100 });
+    if (cursor < DAY) segs.push({ go: false, w: (DAY - cursor) / DAY * 100 });
     return segs;
   }
 
@@ -173,8 +172,8 @@ window.WW_UI = (function () {
     el.banner.hidden = false;
     el.banner.className = "go-banner " + (go.nowGo ? "go" : "no-go");
 
-    const total = (go.ssMin - go.srMin) || 1;
-    const pct = (m) => Math.max(0, Math.min(100, (m - go.srMin) / total * 100));
+    // Full-day domain (midnight→midnight) so the bar edges align with charts.
+    const pct = (m) => Math.max(0, Math.min(100, m / 1440 * 100));
 
     // A one-line summary next to the status chip.
     let sub;
@@ -188,21 +187,18 @@ window.WW_UI = (function () {
     const segs = buildSegments(go.windows, go.srMin, go.ssMin)
       .map((s) => `<div class="go-seg ${s.go ? "go" : "no"}" style="width:${s.w.toFixed(2)}%"></div>`)
       .join("");
-    const nowMark = (go.nowMin != null && go.nowMin >= go.srMin && go.nowMin <= go.ssMin)
+    const nowMark = go.nowMin != null
       ? `<div class="go-now" style="left:${pct(go.nowMin).toFixed(2)}%"></div>` : "";
 
-    // Time labels: sunrise/sunset at the ends, GO open/close in between.
-    // Show sunrise/sunset at the ends, unless a GO edge is near that end
-    // (then the window time takes priority to avoid overlapping labels).
-    const leftClear = !go.windows.some((w) => pct(w.open) < 12 || pct(w.close) < 12);
-    const rightClear = !go.windows.some((w) => pct(w.open) > 88 || pct(w.close) > 88);
-    let ticks = leftClear ? `<span class="go-tick end-l">${fmtClockShort(go.srMin)}</span>` : "";
+    // Midnight at each end (aligned with the charts' 00:00/24:00), plus each
+    // GO window's open/close time in between.
+    let ticks = `<span class="go-tick end-l">12a</span>`;
     for (const w of go.windows) {
       const op = pct(w.open), cp = pct(w.close);
-      if (op > 2 && op < 98) ticks += `<span class="go-tick go-edge" style="left:${op.toFixed(2)}%">${fmtClockShort(w.open)}</span>`;
-      if (cp > 2 && cp < 98) ticks += `<span class="go-tick go-edge" style="left:${cp.toFixed(2)}%">${fmtClockShort(w.close)}</span>`;
+      if (op > 4 && op < 90) ticks += `<span class="go-tick go-edge" style="left:${op.toFixed(2)}%">${fmtClockShort(w.open)}</span>`;
+      if (cp > 4 && cp < 90) ticks += `<span class="go-tick go-edge" style="left:${cp.toFixed(2)}%">${fmtClockShort(w.close)}</span>`;
     }
-    if (rightClear) ticks += `<span class="go-tick end-r">${fmtClockShort(go.ssMin)}</span>`;
+    ticks += `<span class="go-tick end-r">12a</span>`;
 
     el.banner.innerHTML =
       `<div class="go-head">

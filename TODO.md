@@ -108,4 +108,7 @@ _Nothing queued — send a feature request and it'll show up here._
       rideable window open/close timestamps (all three metrics in range,
       during daylight); "closes …" hint when a window is currently open.
 - [x] Render it as a horizontal day timeline bar: green = GO, red = NO-GO,
-      with a "now" marker and open/close time ticks (sunrise→sunset span).
+      with a "now" marker and open/close time ticks.
+- [x] Bar spans the full 24h (midnight→midnight); its left/right edges align
+      with the charts underneath (banner matches the cards' geometry). Chip
+      status derived from the timeline so it never contradicts the bar.
