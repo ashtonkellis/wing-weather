@@ -2,7 +2,9 @@
 window.WW_CONFIG = {
   // App version, shown in the footer. Bump on every deploy and keep
   // sw.js CACHE ("wing-weather-v<version>") in sync. See CLAUDE.md.
-  version: "23",
+  version: "24",
+  // How many days of forecast to fetch (today + the next N-1 days).
+  forecastDays: 5,
   // Selectable wing-foil locations. To add one, add an entry here:
   //   "your-slug": { name, latitude, longitude, tideStation }
   // It then appears in the in-app picker and works via ?loc=your-slug.

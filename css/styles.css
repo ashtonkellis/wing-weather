@@ -84,6 +84,35 @@ main {
 .status { text-align: center; color: var(--muted); margin: 32px 0; }
 .status.error { color: var(--bad); }
 
+/* Day selector tabs */
+.day-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.day-tabs::-webkit-scrollbar { display: none; }
+.day-tab {
+  font: inherit;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  cursor: pointer;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  color: var(--muted);
+  flex: 0 0 auto;
+}
+.day-tab.active {
+  background: var(--accent);
+  color: #04283a;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
 /* GO / NO-GO timeline banner above the cards */
 .go-banner {
   /* Match the cards' horizontal geometry (4px left border + 12px padding)

@@ -103,6 +103,14 @@ _Nothing queued — send a feature request and it'll show up here._
 - [x] Tap/drag a chart to show a cursor with the time (and value) at that
       point; wind also shows the gust value. Persists after release.
 
+### Epic 14 — Multi-day forecast
+- [x] Day-selector tabs (Today + next few days) at the top of the UI
+- [x] Fetch several days at once (Open-Meteo forecast_days + NOAA multi-day
+      tide) and switch days client-side with no refetch
+- [x] Future days show each metric's day range + hours-rideable badge, the
+      day's GO timeline, night shading, and no "now" marker; footer shows
+      the date. Today keeps current values + now-marker.
+
 ### Epic 13 — GO / NO-GO banner
 - [x] Banner atop the UI showing the current GO/NO-GO status and today's
       rideable window open/close timestamps (all three metrics in range,

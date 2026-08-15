@@ -12,11 +12,16 @@
     try { localStorage.setItem(LOC_KEY, slug); } catch (_) {}
   }
 
+  let forecast = null;      // multi-day data from the last fetch
+  let selectedDate = null;  // which day is shown
+
   async function refresh() {
     window.WW_UI.setStatus("Loading conditions…", false);
+    hideTabs();
     try {
-      const conditions = await window.WW_Api.getConditions();
-      window.WW_UI.render(conditions, thresholds);
+      forecast = await window.WW_Api.getForecast();
+      if (!selectedDate || !forecast.byDate[selectedDate]) selectedDate = forecast.today;
+      renderDay();
     } catch (err) {
       window.WW_UI.setStatus(
         (err && err.message ? err.message : "Something went wrong") + " — tap refresh to retry.",
@@ -25,9 +30,41 @@
     }
   }
 
+  // Render the currently selected day from already-fetched data (no refetch).
+  function renderDay() {
+    if (!forecast) return;
+    const conditions = window.WW_Api.buildDay(forecast, selectedDate);
+    window.WW_UI.render(conditions, thresholds);
+    renderTabs();
+  }
+
+  function hideTabs() {
+    const tabs = document.getElementById("day-tabs");
+    if (tabs) tabs.hidden = true;
+  }
+
+  function renderTabs() {
+    const tabs = document.getElementById("day-tabs");
+    if (!tabs || !forecast) return;
+    tabs.innerHTML = "";
+    for (const date of forecast.days) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "day-tab" + (date === selectedDate ? " active" : "");
+      btn.textContent = date === forecast.today ? "Today" : window.WW_UI.fmtDayLabel(date, false);
+      btn.addEventListener("click", () => {
+        if (selectedDate === date) return;
+        selectedDate = date;
+        renderDay();
+      });
+      tabs.appendChild(btn);
+    }
+    tabs.hidden = forecast.days.length < 2;
+  }
+
+  // Thresholds changed → just re-render the current day (data is cached).
   function rerenderIfLoaded() {
-    // Re-fetch so thresholds re-evaluate against fresh data.
-    refresh();
+    if (forecast) renderDay();
   }
 
   // Set the active location, persist it, and reflect it in the URL + picker.

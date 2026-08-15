@@ -21,9 +21,10 @@ window.WW_UI = (function () {
     el.refresh.hidden = !isError;
   }
 
-  let currentSunrise = null; // ISO string: today's sunrise (night shading)
-  let currentSunset = null;  // ISO string: today's sunset (footer + shading)
-  let currentNow = null;     // ISO string: "now", for the now-marker on charts
+  let currentSunrise = null; // ISO string: selected day's sunrise (night shading)
+  let currentSunset = null;  // ISO string: selected day's sunset (footer + shading)
+  let currentNow = null;     // ISO string: "now" (null for future days → no marker)
+  let isTodayView = true;    // is the selected day today?
 
   function hhmm(t) {
     return t && t.length >= 16 ? t.slice(11, 16) : "";
@@ -57,6 +58,7 @@ window.WW_UI = (function () {
     currentSunrise = conditions.sunrise || null;
     currentSunset = conditions.sunset || null;
     currentNow = conditions.now || null;
+    isTodayView = !!conditions.isToday;
 
     renderBanner(computeGo(conditions, thresholds));
 
@@ -65,10 +67,13 @@ window.WW_UI = (function () {
     el.cards.appendChild(tempCard(conditions.temp, thresholds.temp));
 
     el.updated.hidden = false;
-    const updatedAt = conditions.fetchedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    el.updated.textContent = currentSunset
-      ? `Updated ${updatedAt} · ☀️ Sunset ${fmtTime(currentSunset)}`
-      : `Updated ${updatedAt}`;
+    const sunsetTxt = currentSunset ? ` · ☀️ Sunset ${fmtTime(currentSunset)}` : "";
+    if (isTodayView) {
+      const updatedAt = conditions.fetchedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      el.updated.textContent = `Updated ${updatedAt}${sunsetTxt}`;
+    } else {
+      el.updated.textContent = `${fmtDayLabel(conditions.date, true)}${sunsetTxt}`;
+    }
     el.refresh.hidden = false;
   }
 
@@ -170,16 +175,25 @@ window.WW_UI = (function () {
     if (!el.banner) return;
     if (!go) { el.banner.hidden = true; return; }
     el.banner.hidden = false;
-    el.banner.className = "go-banner " + (go.nowGo ? "go" : "no-go");
+
+    const future = go.nowMin == null;              // viewing a future day
+    const isGo = future ? go.windows.length > 0 : go.nowGo;
+    el.banner.className = "go-banner " + (isGo ? "go" : "no-go");
 
     // Full-day domain (midnight→midnight) so the bar edges align with charts.
     const pct = (m) => Math.max(0, Math.min(100, m / 1440 * 100));
 
     // A one-line summary next to the status chip.
     let sub;
-    if (go.nowGo && go.closesAt != null) sub = `closes ${fmtClock(go.closesAt)}`;
+    if (future) {
+      if (!go.windows.length) sub = "no window";
+      else {
+        const w = go.windows[0];
+        sub = `window ${fmtSpan(w.open, w.close)}` + (go.windows.length > 1 ? ` +${go.windows.length - 1}` : "");
+      }
+    } else if (go.nowGo && go.closesAt != null) sub = `closes ${fmtClock(go.closesAt)}`;
     else if (go.windows.length) {
-      const next = go.windows.find((w) => w.open > (go.nowMin == null ? -1 : go.nowMin));
+      const next = go.windows.find((w) => w.open > go.nowMin);
       sub = next ? `opens ${fmtClock(next.open)}` : "done for today";
     } else sub = "no window today";
 
@@ -202,7 +216,7 @@ window.WW_UI = (function () {
 
     el.banner.innerHTML =
       `<div class="go-head">
-        <span class="go-status">${go.nowGo ? "GO" : "NO-GO"}</span>
+        <span class="go-status">${isGo ? "GO" : "NO-GO"}</span>
         <span class="go-sub">${sub}</span>
       </div>
       <div class="go-bar">${segs}${nowMark}</div>
@@ -210,68 +224,101 @@ window.WW_UI = (function () {
   }
 
   function tideCard(tide, range) {
-    if (!tide) return errorCard(defaults.tide, "Tide data unavailable");
-    const value = tide.value;
-    let sub = "";
-    if (tide.nextExtreme) {
-      sub = `next ${tide.nextExtreme.type.toLowerCase()} ` +
-        `${tide.nextExtreme.v.toFixed(1)} ft · ${fmtTime(tide.nextExtreme.t)}`;
+    if (!tide || !tide.series || tide.series.length < 2) return errorCard(defaults.tide, "Tide data unavailable");
+    const meta = defaults.tide;
+    if (isTodayView && tide.value != null) {
+      const inRange = inRangeVal(tide.value, range);
+      const trendArrow = tide.trend === "rising" ? " ↑" : tide.trend === "falling" ? " ↓" : "";
+      const sub = tide.nextExtreme
+        ? `next ${tide.nextExtreme.type.toLowerCase()} ${tide.nextExtreme.v.toFixed(1)} ft · ${fmtTime(tide.nextExtreme.t)}` : "";
+      return buildCard(meta, range, {
+        headline: `${tide.value.toFixed(1)}<span class="card-unit"> ${meta.unit}</span>${trendArrow}`,
+        inRange, badgeText: inRange ? "✓ Rideable" : "✗ Out", sub, series: tide.series,
+      });
     }
-    const trendArrow = tide.trend === "rising" ? " ↑" : tide.trend === "falling" ? " ↓" : "";
-    return buildCard(defaults.tide, value, range, {
-      valueSuffix: trendArrow,
-      sub,
-      series: tide.series,
-    });
+    return futureCard(meta, range, tide.series);
   }
 
   function windCard(wind, range) {
-    if (!wind || wind.value == null) return errorCard(defaults.wind, "Wind data unavailable");
-    // Show direction the wind blows FROM; arrow points the way it travels.
-    let sub = "";
-    if (wind.direction != null) {
-      const deg = Math.round(wind.direction);
-      sub = `<span class="wind-arrow" style="transform:rotate(${deg + 180}deg)">↑</span> from ${dirName(wind.direction)} · ${deg}°`;
+    if (!wind || !wind.series || wind.series.length < 2) return errorCard(defaults.wind, "Wind data unavailable");
+    const meta = defaults.wind;
+    const overlay = { series: wind.gustSeries, label: "gusts" };
+    if (isTodayView && wind.value != null) {
+      const inRange = inRangeVal(wind.value, range);
+      let sub = "";
+      if (wind.direction != null) {
+        const deg = Math.round(wind.direction);
+        sub = `<span class="wind-arrow" style="transform:rotate(${deg + 180}deg)">↑</span> from ${dirName(wind.direction)} · ${deg}°`;
+      }
+      return buildCard(meta, range, {
+        headline: `${Math.round(wind.value)}<span class="card-unit"> ${meta.unit}</span>`,
+        inRange, badgeText: inRange ? "✓ Rideable" : "✗ Out", sub, series: wind.series, overlay,
+      });
     }
-    return buildCard(defaults.wind, wind.value, range, {
-      sub,
-      series: wind.series,
-      overlay: { series: wind.gustSeries, label: "gusts" },
-    });
+    return futureCard(meta, range, wind.series, overlay);
   }
 
   function tempCard(temp, range) {
-    if (!temp || temp.value == null) return errorCard(defaults.temp, "Temp data unavailable");
-    return buildCard(defaults.temp, temp.value, range, { series: temp.series });
+    if (!temp || !temp.series || temp.series.length < 2) return errorCard(defaults.temp, "Temp data unavailable");
+    const meta = defaults.temp;
+    if (isTodayView && temp.value != null) {
+      const inRange = inRangeVal(temp.value, range);
+      return buildCard(meta, range, {
+        headline: `${Math.round(temp.value)}<span class="card-unit"> ${meta.unit}</span>`,
+        inRange, badgeText: inRange ? "✓ Rideable" : "✗ Out", series: temp.series,
+      });
+    }
+    return futureCard(meta, range, temp.series);
   }
 
-  function buildCard(meta, value, range, opts) {
-    opts = opts || {};
-    const aboveMin = range.min == null || value >= range.min;
-    const belowMax = range.max == null || value <= range.max;
-    const inRange = aboveMin && belowMax;
+  function inRangeVal(v, range) { return inRange(v, range.min, range.max); }
+
+  // Future day: headline shows the day's range; badge shows daylight hours in range.
+  function futureCard(meta, range, series, overlay) {
+    const vals = series.map((p) => p.v);
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    const step = series.length > 1 ? (minutesOf(series[1].t) - minutesOf(series[0].t)) : 60;
+    const sr = currentSunrise ? minutesOf(currentSunrise) : 0;
+    const ss = currentSunset ? minutesOf(currentSunset) : 1440;
+    let rideMin = 0;
+    for (const p of series) {
+      const m = minutesOf(p.t);
+      if (m >= sr && m <= ss && inRangeVal(p.v, range)) rideMin += step;
+    }
+    const inR = rideMin > 0;
+    const badgeText = !inR ? "✗ none" : (rideMin >= 60 ? `${Math.round(rideMin / 60)}h ✓` : "<1h ✓");
+    return buildCard(meta, range, {
+      headline: `${fmtVal(lo, meta.unit)}–${fmtVal(hi, meta.unit)}<span class="card-unit"> ${meta.unit}</span>`,
+      inRange: inR, badgeText, series, overlay,
+    });
+  }
+
+  function buildCard(meta, range, spec) {
     const card = document.createElement("section");
-    card.className = "card " + (inRange ? "in-range" : "out-range");
-
-    const shown = meta.unit === "kn" || meta.unit === "°F"
-      ? Math.round(value) : value.toFixed(1);
-
+    card.className = "card " + (spec.inRange ? "in-range" : "out-range");
     card.innerHTML = `
       <div class="card-top">
         <div>
           <p class="card-title">${meta.icon} ${meta.label}</p>
-          <p class="card-value">${shown}<span class="card-unit"> ${meta.unit}</span>${opts.valueSuffix || ""}</p>
+          <p class="card-value">${spec.headline}</p>
         </div>
         <div class="card-right">
-          <span class="badge ${inRange ? "in-range" : "out-range"}">${inRange ? "✓ Rideable" : "✗ Out"}</span>
-          ${opts.sub ? `<span class="sub">${opts.sub}</span>` : ""}
+          <span class="badge ${spec.inRange ? "in-range" : "out-range"}">${spec.badgeText}</span>
+          ${spec.sub ? `<span class="sub">${spec.sub}</span>` : ""}
         </div>
       </div>`;
-
-    if (opts.series && opts.series.length > 1) {
-      card.appendChild(forecast(opts.series, range, meta, opts.overlay));
+    if (spec.series && spec.series.length > 1) {
+      card.appendChild(forecast(spec.series, range, meta, spec.overlay));
     }
     return card;
+  }
+
+  // "Sat Aug 16" (long=true) or "Sat" (short).
+  function fmtDayLabel(dateStr, long) {
+    const d = new Date(dateStr + "T12:00:00");
+    return d.toLocaleDateString([], long
+      ? { weekday: "short", month: "short", day: "numeric" }
+      : { weekday: "short" });
   }
 
   function errorCard(meta, message) {
@@ -456,5 +503,5 @@ window.WW_UI = (function () {
     el.dialog.showModal();
   }
 
-  return { setStatus, render, openSettings };
+  return { setStatus, render, openSettings, fmtDayLabel };
 })();
