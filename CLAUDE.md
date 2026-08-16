@@ -13,6 +13,13 @@ We track feature work in `TODO.md`, which has a **To Do** section and a
 Keep `TODO.md` current as part of doing the work — updating it is not a
 separate step to wait for.
 
+## Workflow: push only when the To Do list is empty
+
+Don't push to GitHub after every individual change. Keep working (committing
+locally is fine) and only **push when the `TODO.md` To Do section is empty** —
+i.e. all requested work is done. Then push once. A "deploy" is a push, so the
+version-bump step below applies to that push, not to each intermediate change.
+
 ## Workflow: app version on every deploy
 
 The app shows its version in the footer. It is a single source of truth in
