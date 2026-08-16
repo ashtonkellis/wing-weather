@@ -154,6 +154,15 @@ window.WW_UI = (function () {
     h = h % 12 || 12;
     return m ? `${h}:${String(m).padStart(2, "0")}${ap}` : `${h}${ap}`;
   }
+  // Compact span "2:59–3:14p" (shares the meridiem when both ends match).
+  function fmtSpanShort(a, b) {
+    const apOf = (x) => (Math.floor((((x % 1440) + 1440) % 1440) / 60) < 12 ? "a" : "p");
+    const hm = (x) => {
+      const mm = ((x % 1440) + 1440) % 1440, h = Math.floor(mm / 60) % 12 || 12, m = mm % 60;
+      return m ? `${h}:${String(m).padStart(2, "0")}` : `${h}`;
+    };
+    return apOf(a) === apOf(b) ? `${hm(a)}–${hm(b)}${apOf(b)}` : `${fmtClockShort(a)}–${fmtClockShort(b)}`;
+  }
 
   // Split the FULL day (midnight→midnight) into GO / NO-GO segments.
   // GO only where a window exists; everything else (incl. night) is NO-GO.
@@ -209,8 +218,14 @@ window.WW_UI = (function () {
     let ticks = `<span class="go-tick end-l">12a</span>`;
     for (const w of go.windows) {
       const op = pct(w.open), cp = pct(w.close);
-      if (op > 4 && op < 90) ticks += `<span class="go-tick go-edge" style="left:${op.toFixed(2)}%">${fmtClockShort(w.open)}</span>`;
-      if (cp > 4 && cp < 90) ticks += `<span class="go-tick go-edge" style="left:${cp.toFixed(2)}%">${fmtClockShort(w.close)}</span>`;
+      if (cp - op < 12) {
+        // Too narrow for two labels — show one combined range at the midpoint.
+        const mid = (op + cp) / 2;
+        if (mid > 4 && mid < 96) ticks += `<span class="go-tick go-edge" style="left:${mid.toFixed(2)}%">${fmtSpanShort(w.open, w.close)}</span>`;
+      } else {
+        if (op > 4 && op < 90) ticks += `<span class="go-tick go-edge" style="left:${op.toFixed(2)}%">${fmtClockShort(w.open)}</span>`;
+        if (cp > 4 && cp < 90) ticks += `<span class="go-tick go-edge" style="left:${cp.toFixed(2)}%">${fmtClockShort(w.close)}</span>`;
+      }
     }
     ticks += `<span class="go-tick end-r">12a</span>`;
 
