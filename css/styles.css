@@ -130,7 +130,15 @@ main {
 .go-status { font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px; white-space: nowrap; }
 .go-banner.go .go-status { color: var(--good); }
 .go-banner.no-go .go-status { color: var(--bad); }
-.go-sub { font-size: 0.76rem; color: var(--muted); }
+.go-sub {
+  font-size: 0.76rem;
+  color: var(--muted);
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .go-bar {
   position: relative;

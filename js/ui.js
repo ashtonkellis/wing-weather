@@ -195,11 +195,8 @@ window.WW_UI = (function () {
     // A one-line summary next to the status chip.
     let sub;
     if (future) {
-      if (!go.windows.length) sub = "no window";
-      else {
-        const w = go.windows[0];
-        sub = `window ${fmtSpan(w.open, w.close)}` + (go.windows.length > 1 ? ` +${go.windows.length - 1}` : "");
-      }
+      // List every window (bar labels may be dropped by collision avoidance).
+      sub = go.windows.length ? go.windows.map((w) => fmtSpanShort(w.open, w.close)).join(" · ") : "no window";
     } else if (go.nowGo && go.closesAt != null) sub = `closes ${fmtClock(go.closesAt)}`;
     else if (go.windows.length) {
       const next = go.windows.find((w) => w.open > go.nowMin);
@@ -213,18 +210,29 @@ window.WW_UI = (function () {
     const nowMark = go.nowMin != null
       ? `<div class="go-now" style="left:${pct(go.nowMin).toFixed(2)}%"></div>` : "";
 
-    // Midnight at each end (aligned with the charts' 00:00/24:00), plus each
-    // GO window's open/close time in between.
-    let ticks = `<span class="go-tick end-l">12a</span>`;
+    // Build candidate window labels: a narrow window gets one combined label,
+    // a wide one gets separate open/close labels.
+    const cand = [];
     for (const w of go.windows) {
       const op = pct(w.open), cp = pct(w.close);
-      if (cp - op < 12) {
-        // Too narrow for two labels — show one combined range at the midpoint.
-        const mid = (op + cp) / 2;
-        if (mid > 4 && mid < 96) ticks += `<span class="go-tick go-edge" style="left:${mid.toFixed(2)}%">${fmtSpanShort(w.open, w.close)}</span>`;
-      } else {
-        if (op > 4 && op < 90) ticks += `<span class="go-tick go-edge" style="left:${op.toFixed(2)}%">${fmtClockShort(w.open)}</span>`;
-        if (cp > 4 && cp < 90) ticks += `<span class="go-tick go-edge" style="left:${cp.toFixed(2)}%">${fmtClockShort(w.close)}</span>`;
+      if (cp - op < 12) cand.push({ x: (op + cp) / 2, text: fmtSpanShort(w.open, w.close) });
+      else { cand.push({ x: op, text: fmtClockShort(w.open) }); cand.push({ x: cp, text: fmtClockShort(w.close) }); }
+    }
+    cand.sort((a, b) => a.x - b.x);
+
+    // Collision avoidance: keep the two midnight ends; drop any window label
+    // that would overlap one already placed (the green segments still show it).
+    const CH = 1.65;            // approx % bar-width per character (conservative)
+    const GAP = 1;             // min gap between labels, %
+    const halfW = (t) => (t.length * CH) / 2;
+    let ticks = `<span class="go-tick end-l">12a</span>`;
+    let lastRight = 3 * CH + GAP;         // right edge of the "12a" left end
+    const rightLimit = 100 - 3 * CH - GAP; // left edge of the "12a" right end
+    for (const c of cand) {
+      const l = c.x - halfW(c.text), r = c.x + halfW(c.text);
+      if (l >= lastRight && r <= rightLimit) {
+        ticks += `<span class="go-tick go-edge" style="left:${c.x.toFixed(2)}%">${c.text}</span>`;
+        lastRight = r + GAP;
       }
     }
     ticks += `<span class="go-tick end-r">12a</span>`;
