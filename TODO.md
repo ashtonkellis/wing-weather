@@ -30,6 +30,9 @@ _Nothing queued — send a feature request and it'll show up here._
 
 ## Done
 
+### Epic 15 — Tide threshold
+- [x] Raise the default minimum tide height to **3.5 ft**
+
 ### Epic 1 — Scaffolding, hosting & auto-deploy
 - [x] Scaffold static PWA structure (`index.html`, `css/`, `js/`, `icons/`)
 - [x] GitHub Pages hosting (static site + `.nojekyll`)

@@ -2,7 +2,7 @@
 window.WW_CONFIG = {
   // App version, shown in the footer. Bump on every deploy and keep
   // sw.js CACHE ("wing-weather-v<version>") in sync. See CLAUDE.md.
-  version: "28",
+  version: "29",
   // How many days of forecast to fetch (today + the next N-1 days).
   forecastDays: 5,
   // Selectable wing-foil locations. To add one, add an entry here:
@@ -26,7 +26,7 @@ window.WW_CONFIG = {
   // Default rideable ranges. min/max are user-configurable; a `null` max
   // means "no upper limit". Overrides live in localStorage.
   defaults: {
-    tide: { min: 1.0, max: null, unit: "ft", label: "Tide height", icon: "🌊" },
+    tide: { min: 3.5, max: null, unit: "ft", label: "Tide height", icon: "🌊" },
     wind: { min: 7, max: null, unit: "kn", label: "Wind speed", icon: "💨" },
     temp: { min: 60, max: null, unit: "°F", label: "Temperature", icon: "🌡️" },
   },
