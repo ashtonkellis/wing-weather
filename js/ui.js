@@ -123,15 +123,29 @@ window.WW_UI = (function () {
     // in range (sampled every 15 min from the interpolated series).
     const tSM = seriesMinutes(tide.series), wSM = seriesMinutes(wind.series), pSM = seriesMinutes(temp.series);
     const STEP = 15;
+    const goAt = (m) =>
+      inRange(interpAt(tSM, m), th.tide.min, th.tide.max) &&
+      inRange(interpAt(wSM, m), th.wind.min, th.wind.max) &&
+      inRange(interpAt(pSM, m), th.temp.min, th.temp.max);
+
+    // A transition happened somewhere between two samples; bisect to find the
+    // last minute that is still GO, so windows aren't overstated by a step.
+    function edge(goM, noM) {
+      let g = goM, n = noM;
+      while (Math.abs(n - g) > 1) {
+        const mid = Math.round((g + n) / 2);
+        if (goAt(mid)) g = mid; else n = mid;
+      }
+      return g;
+    }
+
     const windows = [];
-    let openM = null;
+    let openM = null, prevM = null;
     for (let m = srMin; m <= ssMin; m += STEP) {
-      const go =
-        inRange(interpAt(tSM, m), th.tide.min, th.tide.max) &&
-        inRange(interpAt(wSM, m), th.wind.min, th.wind.max) &&
-        inRange(interpAt(pSM, m), th.temp.min, th.temp.max);
-      if (go && openM == null) openM = m;
-      if (!go && openM != null) { windows.push({ open: openM, close: m }); openM = null; }
+      const go = goAt(m);
+      if (go && openM == null) openM = prevM == null ? m : edge(m, prevM);
+      if (!go && openM != null) { windows.push({ open: openM, close: edge(prevM, m) }); openM = null; }
+      prevM = m;
     }
     if (openM != null) windows.push({ open: openM, close: ssMin });
 
@@ -274,7 +288,7 @@ window.WW_UI = (function () {
         sub = `<span class="wind-arrow" style="transform:rotate(${deg + 180}deg)">↑</span> from ${dirName(wind.direction)} · ${deg}°`;
       }
       return buildCard(meta, range, {
-        headline: `${Math.round(wind.value)}<span class="card-unit"> ${meta.unit}</span>`,
+        headline: `${fmtNowVal(wind.value, range, meta.unit)}<span class="card-unit"> ${meta.unit}</span>`,
         inRange, badgeText: inRange ? "✓ Rideable" : "✗ Out", sub, series: wind.series, overlay,
       });
     }
@@ -287,7 +301,7 @@ window.WW_UI = (function () {
     if (isTodayView && temp.value != null) {
       const inRange = inRangeVal(temp.value, range);
       return buildCard(meta, range, {
-        headline: `${Math.round(temp.value)}<span class="card-unit"> ${meta.unit}</span>`,
+        headline: `${fmtNowVal(temp.value, range, meta.unit)}<span class="card-unit"> ${meta.unit}</span>`,
         inRange, badgeText: inRange ? "✓ Rideable" : "✗ Out", series: temp.series,
       });
     }
@@ -295,6 +309,18 @@ window.WW_UI = (function () {
   }
 
   function inRangeVal(v, range) { return inRange(v, range.min, range.max); }
+
+  // Headline value. Rounding to a whole number could print "7 kn" next to a
+  // "✗ Out" badge when the real value was 6.7 and the min was 7, so keep one
+  // decimal whenever rounding would cross a threshold.
+  function fmtNowVal(v, range, unit) {
+    if (unit !== "kn" && unit !== "°F") return v.toFixed(1);
+    const r = Math.round(v);
+    const crosses = range &&
+      ((range.min != null && (v < range.min) !== (r < range.min)) ||
+       (range.max != null && (v > range.max) !== (r > range.max)));
+    return crosses ? v.toFixed(1) : String(r);
+  }
 
   // Future day: headline shows the day's range; badge shows daylight hours in range.
   function futureCard(meta, range, series, overlay) {

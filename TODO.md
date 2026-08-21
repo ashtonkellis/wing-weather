@@ -33,6 +33,14 @@ _Nothing queued — send a feature request and it'll show up here._
 ### Epic 15 — Tide threshold
 - [x] Raise the default minimum tide height to **3.5 ft**
 
+### Epic 16 — GO banner / card consistency
+- [x] Fix the banner showing **GO** while a card showed **Out**: today's
+      series is anchored to the current observation, so the cards, charts
+      and GO timeline all read one curve
+- [x] Stop the headline rounding into a contradiction ("7 kn · ✗ Out")
+- [x] Close GO windows at the real crossing minute, not the next 15-min
+      sample (windows were overstated by up to 15 min)
+
 ### Epic 1 — Scaffolding, hosting & auto-deploy
 - [x] Scaffold static PWA structure (`index.html`, `css/`, `js/`, `icons/`)
 - [x] GitHub Pages hosting (static site + `.nojekyll`)

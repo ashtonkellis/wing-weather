@@ -103,6 +103,43 @@ window.WW_Api = (function () {
     return { now, today, days, byDate, current: (om && om.current) || {}, hiloPoints };
   }
 
+  /* Linear interpolation of a {t,v} series at a minute-of-day. */
+  function valueAt(series, m) {
+    if (!series || !series.length) return null;
+    if (m <= minutesOf(series[0].t)) return series[0].v;
+    const last = series[series.length - 1];
+    if (m >= minutesOf(last.t)) return last.v;
+    for (let i = 1; i < series.length; i++) {
+      const bM = minutesOf(series[i].t);
+      if (bM >= m) {
+        const a = series[i - 1], aM = minutesOf(a.t);
+        return a.v + (series[i].v - a.v) * ((m - aM) / (bM - aM || 1));
+      }
+    }
+    return last.v;
+  }
+
+  /* Splice the observed "now" value into an hourly series so every consumer
+     — the card headline, the chart, and the GO banner — reads one curve.
+     Otherwise the cards show `current` while the banner interpolates the
+     hourly forecast, and the two can disagree right at a threshold. */
+  function anchorNow(series, nowT, value) {
+    if (!series || !series.length) return series;
+    if (value == null || !Number.isFinite(Number(value))) return series;
+    const v = Number(value);
+    const m = minutesOf(nowT);
+    const out = [];
+    let placed = false;
+    for (const p of series) {
+      const pm = minutesOf(p.t);
+      if (pm === m) { out.push({ t: p.t, v }); placed = true; continue; }
+      if (pm > m && !placed) { out.push({ t: nowT, v }); placed = true; }
+      out.push(p);
+    }
+    if (!placed) out.push({ t: nowT, v });
+    return out;
+  }
+
   /* ---- Build a single day's conditions object for rendering ---- */
   function buildDay(forecast, date) {
     if (!forecast.byDate[date]) date = forecast.today;
@@ -118,13 +155,12 @@ window.WW_Api = (function () {
       let value = null, trend = null, nextExtreme = null;
       if (isToday) {
         const nowMin = minutesOf(forecast.now);
-        let ci = 0, best = Infinity;
-        for (let i = 0; i < series.length; i++) {
-          const diff = Math.abs(minutesOf(series[i].t) - nowMin);
-          if (diff < best) { best = diff; ci = i; }
-        }
-        value = series[ci].v;
-        trend = (series[ci + 1] || series[ci]).v >= value ? "rising" : "falling";
+        // Read the value off the series itself (rather than the nearest 6-min
+        // sample) so the headline matches what the banner interpolates.
+        value = valueAt(series, nowMin);
+        const ni = series.findIndex((p) => minutesOf(p.t) > nowMin);
+        const next = ni === -1 ? series[series.length - 1] : series[ni];
+        trend = next.v >= value ? "rising" : "falling";
         for (const p of forecast.hiloPoints) {
           if (p.t > forecast.now) { nextExtreme = { type: p.type === "H" ? "High" : "Low", t: p.t, v: p.v }; break; }
         }
@@ -132,14 +168,16 @@ window.WW_Api = (function () {
       tide = { unit: "ft", series, value, trend, nextExtreme };
     }
 
-    // Wind
+    // Wind — today's series is anchored to the current observation so the
+    // card badge and the GO banner can never disagree about "now".
     let wind = null;
     if (d.windSeries && d.windSeries.length > 1) {
+      const series = isToday ? anchorNow(d.windSeries, forecast.now, cur.wind_speed_10m) : d.windSeries;
       wind = {
         unit: "kn",
-        series: d.windSeries,
-        gustSeries: d.gustSeries,
-        value: isToday ? cur.wind_speed_10m : null,
+        series,
+        gustSeries: isToday ? anchorNow(d.gustSeries, forecast.now, cur.wind_gusts_10m) : d.gustSeries,
+        value: isToday ? valueAt(series, minutesOf(forecast.now)) : null,
         gust: isToday ? cur.wind_gusts_10m : null,
         direction: isToday ? cur.wind_direction_10m : null,
       };
@@ -148,7 +186,8 @@ window.WW_Api = (function () {
     // Temperature
     let temp = null;
     if (d.tempSeries && d.tempSeries.length > 1) {
-      temp = { unit: "°F", series: d.tempSeries, value: isToday ? cur.temperature_2m : null };
+      const series = isToday ? anchorNow(d.tempSeries, forecast.now, cur.temperature_2m) : d.tempSeries;
+      temp = { unit: "°F", series, value: isToday ? valueAt(series, minutesOf(forecast.now)) : null };
     }
 
     return {
