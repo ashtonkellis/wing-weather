@@ -37,7 +37,8 @@ _Nothing queued — send a feature request and it'll show up here._
 - [x] Fix the banner showing **GO** while a card showed **Out**: today's
       series is anchored to the current observation, so the cards, charts
       and GO timeline all read one curve
-- [x] Stop the headline rounding into a contradiction ("7 kn · ✗ Out")
+- [x] Stop the wind headline rounding into a contradiction ("7 kn · ✗ Out");
+      temperature stays a whole number
 - [x] Close GO windows at the real crossing minute, not the next 15-min
       sample (windows were overstated by up to 15 min)
 

@@ -288,7 +288,7 @@ window.WW_UI = (function () {
         sub = `<span class="wind-arrow" style="transform:rotate(${deg + 180}deg)">↑</span> from ${dirName(wind.direction)} · ${deg}°`;
       }
       return buildCard(meta, range, {
-        headline: `${fmtNowVal(wind.value, range, meta.unit)}<span class="card-unit"> ${meta.unit}</span>`,
+        headline: `${fmtNowVal(wind.value, range)}<span class="card-unit"> ${meta.unit}</span>`,
         inRange, badgeText: inRange ? "✓ Rideable" : "✗ Out", sub, series: wind.series, overlay,
       });
     }
@@ -301,7 +301,7 @@ window.WW_UI = (function () {
     if (isTodayView && temp.value != null) {
       const inRange = inRangeVal(temp.value, range);
       return buildCard(meta, range, {
-        headline: `${fmtNowVal(temp.value, range, meta.unit)}<span class="card-unit"> ${meta.unit}</span>`,
+        headline: `${Math.round(temp.value)}<span class="card-unit"> ${meta.unit}</span>`,
         inRange, badgeText: inRange ? "✓ Rideable" : "✗ Out", series: temp.series,
       });
     }
@@ -310,11 +310,10 @@ window.WW_UI = (function () {
 
   function inRangeVal(v, range) { return inRange(v, range.min, range.max); }
 
-  // Headline value. Rounding to a whole number could print "7 kn" next to a
+  // Wind headline. Rounding to a whole number could print "7 kn" next to a
   // "✗ Out" badge when the real value was 6.7 and the min was 7, so keep one
   // decimal whenever rounding would cross a threshold.
-  function fmtNowVal(v, range, unit) {
-    if (unit !== "kn" && unit !== "°F") return v.toFixed(1);
+  function fmtNowVal(v, range) {
     const r = Math.round(v);
     const crosses = range &&
       ((range.min != null && (v < range.min) !== (r < range.min)) ||
