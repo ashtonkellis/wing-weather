@@ -32,6 +32,8 @@ _Nothing queued — send a feature request and it'll show up here._
 
 ### Epic 15 — Tide threshold
 - [x] Raise the default minimum tide height to **3.5 ft**
+- [x] Raise it again to **5.0 ft** (1 ft above the 4.04 ft tide reading at
+      the time of the request)
 
 ### Epic 16 — GO banner / card consistency
 - [x] Fix the banner showing **GO** while a card showed **Out**: today's
