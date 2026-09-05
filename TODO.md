@@ -35,6 +35,11 @@ _Nothing queued — send a feature request and it'll show up here._
 - [x] Raise it again to **5.0 ft** (1 ft above the 4.04 ft tide reading at
       the time of the request)
 
+### Epic 17 — Settings storage
+- [x] Fix new config defaults being shadowed forever by stale saved
+      thresholds: persist only values that differ from the defaults, and
+      ignore the old all-metrics blob
+
 ### Epic 16 — GO banner / card consistency
 - [x] Fix the banner showing **GO** while a card showed **Out**: today's
       series is anchored to the current observation, so the cards, charts
