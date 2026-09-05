@@ -63,7 +63,7 @@ window.WW_Year = (function () {
   }
 
   async function fetchYear() {
-    const th = window.WW_Storage.load();
+    const th = window.WW_CONFIG.thresholds();
     const { latitude, longitude } = cfg.active;
 
     // Archive lags ~5 days; end a week back and span 364 days before it.

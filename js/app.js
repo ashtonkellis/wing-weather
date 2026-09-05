@@ -1,9 +1,10 @@
 /* App bootstrap: choose the location (URL ?loc= → saved preference →
-   first-run picker), then load thresholds, fetch conditions, and wire the UI. */
+   first-run picker), then fetch conditions and wire the UI. Rideable ranges
+   come from js/config.js; they are not user-editable. */
 (function () {
   const cfg = window.WW_CONFIG;
   const LOC_KEY = "wing-weather.location.v1";
-  let thresholds = window.WW_Storage.load();
+  const thresholds = cfg.thresholds();
 
   function savedLocation() {
     try { return localStorage.getItem(LOC_KEY); } catch (_) { return null; }
@@ -62,11 +63,6 @@
     tabs.hidden = forecast.days.length < 2;
   }
 
-  // Thresholds changed → just re-render the current day (data is cached).
-  function rerenderIfLoaded() {
-    if (forecast) renderDay();
-  }
-
   // Set the active location, persist it, and reflect it in the URL + picker.
   function applyLocation(slug) {
     cfg.active = cfg.resolveLocation(slug);
@@ -87,13 +83,11 @@
   }
 
   /* ---- one-time UI wiring ---- */
-  document.getElementById("settings-btn").addEventListener("click", () => {
-    window.WW_UI.openSettings(
-      thresholds,
-      (next) => { thresholds = window.WW_Storage.save(next); rerenderIfLoaded(); },
-      () => { thresholds = window.WW_Storage.reset(); rerenderIfLoaded(); }
-    );
-  });
+  // Ranges used to be editable in-app and were cached in localStorage, where
+  // a stale copy would shadow later changes to the config. Clear the leftovers.
+  for (const k of ["wing-weather.thresholds.v1", "wing-weather.thresholds.v2"]) {
+    try { localStorage.removeItem(k); } catch (_) {}
+  }
 
   document.getElementById("refresh-btn").addEventListener("click", refresh);
   document.getElementById("year-btn").addEventListener("click", () => window.WW_Year.open());

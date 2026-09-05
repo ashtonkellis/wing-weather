@@ -8,7 +8,6 @@ window.WW_UI = (function () {
     cards: document.getElementById("cards"),
     updated: document.getElementById("updated"),
     refresh: document.getElementById("refresh-btn"),
-    dialog: document.getElementById("settings-dialog"),
   };
 
   function setStatus(message, isError) {
@@ -523,33 +522,5 @@ window.WW_UI = (function () {
     box.addEventListener("pointercancel", end);
   }
 
-  /* ---- Settings dialog ---- */
-  function openSettings(thresholds, onSave, onReset) {
-    for (const m of window.WW_Storage.METRICS) {
-      const minEl = document.getElementById(`${m}-min`);
-      const maxEl = document.getElementById(`${m}-max`);
-      if (minEl) minEl.value = thresholds[m].min;
-      if (maxEl && thresholds[m].max != null) maxEl.value = thresholds[m].max;
-    }
-    const form = document.getElementById("settings-form");
-    form.onsubmit = () => {
-      const next = {};
-      for (const m of window.WW_Storage.METRICS) {
-        const minEl = document.getElementById(`${m}-min`);
-        const maxEl = document.getElementById(`${m}-max`);
-        next[m] = {
-          min: minEl ? minEl.value : thresholds[m].min,
-          max: maxEl ? maxEl.value : null,
-        };
-      }
-      onSave(next);
-    };
-    document.getElementById("reset-btn").onclick = () => {
-      el.dialog.close();
-      onReset();
-    };
-    el.dialog.showModal();
-  }
-
-  return { setStatus, render, openSettings, fmtDayLabel };
+  return { setStatus, render, fmtDayLabel };
 })();

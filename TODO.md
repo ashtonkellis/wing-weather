@@ -7,7 +7,8 @@ New feature requests go under **To Do**; finished ones move to **Done**.
 
 Aggregate local weather — **tide height, wind speed, temperature** — for a
 spot as close to Alameda as possible, and show at a glance whether
-conditions are inside my rideable window (configurable min/max per metric).
+conditions are inside my rideable window (a min per metric, set in
+`js/config.js`).
 
 ### Data sources (verified free, no API key, browser/CORS-friendly)
 
@@ -20,7 +21,8 @@ conditions are inside my rideable window (configurable min/max per metric).
 
 - Static PWA (plain HTML/CSS/JS, no build step) so GitHub Pages can serve
   it directly and auto-deploy is trivial. All API calls happen client-side.
-- Thresholds + settings persisted in `localStorage`.
+- Thresholds are fixed in `js/config.js` (not user-editable); the chosen
+  location is remembered in `localStorage`.
 
 ---
 
@@ -34,6 +36,11 @@ _Nothing queued — send a feature request and it'll show up here._
 - [x] Raise the default minimum tide height to **3.5 ft**
 - [x] Raise it again to **5.0 ft** (1 ft above the 4.04 ft tide reading at
       the time of the request)
+
+### Epic 18 — Fixed thresholds
+- [x] Remove the in-app settings editor entirely (gear button, dialog, and
+      the localStorage layer); rideable ranges now come only from
+      `js/config.js`, and leftover saved values are cleared
 
 ### Epic 17 — Settings storage
 - [x] Fix new config defaults being shadowed forever by stale saved
@@ -70,6 +77,7 @@ _Nothing queued — send a feature request and it'll show up here._
 - [x] Display current tide, wind, and temperature
 - [x] Min/max rideable range per metric with in-range indicator (green/red)
 - [x] Settings screen to configure each min/max (persisted in `localStorage`)
+      — later removed, see Epic 18
 
 ### Epic 5 — Stretch: short-term predictions
 - [x] Predicted tide height (NOAA 6-min predictions)

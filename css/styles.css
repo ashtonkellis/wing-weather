@@ -284,7 +284,7 @@ main {
 }
 
 .updated { text-align: center; color: var(--muted); font-size: 0.72rem; margin-top: 8px; }
-.btn-primary, .btn-secondary {
+.btn-secondary {
   font: inherit;
   cursor: pointer;
   border-radius: 10px;
@@ -305,45 +305,6 @@ main {
 
 .app-footer { text-align: center; color: var(--muted); font-size: 0.66rem; padding: 5px; }
 
-/* Settings dialog */
-.settings-dialog {
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius);
-  background: var(--card);
-  color: var(--text);
-  width: min(92vw, 420px);
-  padding: 20px;
-}
-.settings-dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
-.settings-dialog h2 { margin: 0 0 4px; }
-.settings-hint { color: var(--muted); font-size: 0.82rem; margin: 0 0 14px; }
-.settings-dialog fieldset {
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
-  margin: 0 0 12px;
-  padding: 10px 12px;
-}
-.settings-dialog legend { padding: 0 6px; font-size: 0.9rem; }
-.settings-dialog label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-right: 14px;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-.settings-dialog input {
-  width: 72px;
-  padding: 6px 8px;
-  border-radius: 8px;
-  border: 1px solid var(--card-border);
-  background: var(--bg-bot);
-  color: var(--text);
-  font: inherit;
-}
-.no-max-note { font-size: 0.78rem; color: var(--muted); font-style: italic; }
-.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
-.btn-primary { background: var(--accent); color: #04283a; border-color: var(--accent); font-weight: 600; }
 .btn-secondary { background: transparent; color: var(--muted); }
 
 /* First-run location picker */
